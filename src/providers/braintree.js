@@ -30,7 +30,7 @@ function _drawForm() {
   let div  = document.createElement('div');
 
   div.innerHTML = `
-    <div class="multiple_card_tokenization__modal_overlay" style="display: none;" id="modal_${postfix}">
+    <div class="multiple_card_tokenization__modal_overlay multiple_card_tokenization__modal_overlay__braintree" style="display: none;" id="modal_${postfix}">
       <div class="multiple_card_tokenization__modal_window">
         <div class="multiple_card_tokenization__demo-frame">
           <form action="/" method="post" id="braintree_card_form_${postfix}" >
@@ -76,7 +76,8 @@ function _checkLoading() {
 }
 
 function _initializeScripts() {
-  const { postfix, token } = gatewaySettings;
+  const { postfix, connection } = gatewaySettings;
+  const { token } = connection;
 
   form     = document.querySelector(`#braintree_card_form_${postfix}`);
   submit   = document.querySelector(`#submit_${postfix}`);
@@ -95,7 +96,7 @@ function _afterClientCreate(clientErr, clientInstance) {
   braintree.hostedFields.create({
     client: clientInstance,
     styles: {
-      ...gatewaySettings.styles
+      ...gatewaySettings.connection.styles
     },
     fields: {
       number: {

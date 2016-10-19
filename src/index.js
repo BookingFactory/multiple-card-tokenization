@@ -1,7 +1,9 @@
 import braintree_service from './providers/braintree';
+import pci_proxy_service from './providers/pci_proxy';
 
 const SERVICES = {
-  braintree_service
+  braintree_service,
+  pci_proxy_service
 }
 
 export function init(service, settings) {
