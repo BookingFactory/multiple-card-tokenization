@@ -55,7 +55,7 @@ function _drawForm() {
             </div>
 
             <div class="multiple_card_tokenization__button-container">
-            <input type="submit" class="multiple_card_tokenization__button button--small button--green" value="Purchase" id="submit_${postfix}"/>
+            <input type="submit" class="multiple_card_tokenization__button button--small button--green" value="Save Card Details" id="submit_${postfix}"/>
             </div>
           </form>
         <div>

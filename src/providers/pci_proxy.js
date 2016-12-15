@@ -12,12 +12,6 @@ function _drawForm() {
     <div class="multiple_card_tokenization__modal_overlay multiple_card_tokenization__modal_overlay__pci_proxy" style="display: none;" id="modal_${postfix}">
       <div class="multiple_card_tokenization__modal_window">
         <div class="multiple_card_tokenization__demo-frame">
-          <button id="close-form-${postfix}"></button>
-          <iframe width="350"
-                  height="440"
-                  frameborder="0"
-                  border="0"
-                  src="https://pilot.datatrans.biz/upp/jsp/upStart.jsp?merchantId=${merchantId}&sign=${sign}&refno=pci-proxy-inline&amount=0&currency=${currency}&uppAliasOnly=yes">
         <div>
       </div>
     </div>
@@ -25,7 +19,6 @@ function _drawForm() {
 
   body.appendChild(div);
   modal = document.getElementById(`modal_${postfix}`);
-  document.getElementById(`close-form-${postfix}`).addEventListener('click', hideForm);
 }
 
 function windowEventHandler(event) {
@@ -38,6 +31,10 @@ function windowEventHandler(event) {
       hideForm();
     }
   }
+
+  if (event.data === 'cancel') {
+    hideForm();
+  }
 }
 
 function _initializeScripts() {
@@ -49,6 +46,15 @@ function _initializeScripts() {
 }
 
 function showForm () {
+  const { merchantId, sign, currency, customTheme } = gatewaySettings.connection;
+  let modal_inner = modal.getElementsByClassName('multiple_card_tokenization__demo-frame')[0];
+
+  modal_inner.innerHTML = `<iframe width="100%"
+          height="100%"
+          frameborder="0"
+          border="0"
+          src="https://pilot.datatrans.biz/upp/jsp/upStart.jsp?merchantId=${merchantId}&sign=${sign}&refno=pci-proxy-inline&amount=0&currency=${currency}&uppAliasOnly=yes">`;
+
   modal.style.display = 'block';
 }
 
