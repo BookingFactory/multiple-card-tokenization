@@ -1,13 +1,16 @@
 let libraryPaths = [
-  'https://js.braintreegateway.com/web/3.3.0/js/client.js',
-  'https://js.braintreegateway.com/web/3.3.0/js/hosted-fields.js'
+  'https://js.braintreegateway.com/web/3.6.2/js/client.js',
+  'https://js.braintreegateway.com/web/3.6.2/js/hosted-fields.js',
+  'https://js.braintreegateway.com/web/3.6.2/js/three-d-secure.min.js'
 ];
 let form, submit, closeBTN;
 let hostedFieldsInstance = null;
+let threeDSecure = null;
 let loadingInterval = null;
 let gatewaySettings = {};
 let isReady = false;
 let modal;
+let bankFrame = null;
 
 function _injectLibraryScripts() {
   libraryPaths.forEach((path) => {
@@ -60,9 +63,11 @@ function _drawForm() {
         <div>
       </div>
     </div>
+    <div class="bt-modal-body"></div>
   `;
 
   body.appendChild(div);
+  bankFrame = document.querySelector('.bt-modal-body');
 
   modal = document.getElementById(`modal_${postfix}`);
 }
@@ -92,6 +97,13 @@ function _afterClientCreate(clientErr, clientInstance) {
     console.error(clientErr);
     return;
   }
+
+  braintree.threeDSecure.create({
+    client: clientInstance
+  }, function (threeDSecureErr, threeDSecureInstance) {
+    if (threeDSecureErr) { return; }
+    threeDSecure = threeDSecureInstance;
+  });
 
   braintree.hostedFields.create({
     client: clientInstance,
@@ -136,12 +148,38 @@ function onSubmit(event) {
       return;
     }
 
-    if (gatewaySettings.onTokenize && typeof(gatewaySettings.onTokenize) === 'function') {
-      gatewaySettings.onTokenize(payload.nonce, payload.description);
-    }
+    if (threeDSecure) {
+      threeDSecure.verifyCard({
+        amount: 1,
+        nonce: payload.nonce,
+        addFrame: addFrame,
+        removeFrame: removeFrame
+      }, function (err, response) {
+        if (err) { return; }
 
-    hideForm();
+        if (gatewaySettings.onTokenize && typeof(gatewaySettings.onTokenize) === 'function') {
+          gatewaySettings.onTokenize(payload.nonce, payload.description);
+          hideForm();
+        }
+      });
+    } else {
+      if (gatewaySettings.onTokenize && typeof(gatewaySettings.onTokenize) === 'function') {
+        gatewaySettings.onTokenize(payload.nonce, payload.description);
+        hideForm();
+      }
+    }
   });
+}
+
+function addFrame(err, iframe) {
+  bankFrame.appendChild(iframe);
+  modal.classList.remove('hidden');
+}
+
+function removeFrame() {
+  var iframe = bankFrame.querySelector('iframe');
+  modal.classList.add('hidden');
+  iframe.parentNode.removeChild(iframe);
 }
 
 function showForm () {
