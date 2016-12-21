@@ -10,9 +10,9 @@ let loadingInterval = null;
 let gatewaySettings = {};
 let isReady = false;
 let modal;
-let bankFrame = null;
+let threeDBankFrame = null;
 let threeDModal = null;
-let closeFrame = null;
+let threeDCloseFrame = null;
 
 function _injectLibraryScripts() {
   libraryPaths.forEach((path) => {
@@ -78,10 +78,10 @@ function _drawForm() {
   `;
 
   body.appendChild(div);
-  bankFrame = document.querySelector('.bt-modal-body');
   modal = document.getElementById(`modal_${postfix}`);
+  threeDBankFrame = document.querySelector('.bt-modal-body');
   threeDModal = document.getElementById(`bt-modal_${postfix}`);
-  closeFrame = document.getElementById(`text-close_${postfix}`);
+  threeDCloseFrame = document.getElementById(`text-close_${postfix}`);
 }
 
 function _checkLoading() {
@@ -116,6 +116,10 @@ function _afterClientCreate(clientErr, clientInstance) {
     }, function (threeDSecureErr, threeDSecureInstance) {
       if (threeDSecureErr) { return; }
       threeDSecure = threeDSecureInstance;
+
+      threeDCloseFrame.addEventListener('click', function () {
+        threeDSecure.cancelVerifyCard(removeFrame());
+      });
     });
   }
 
@@ -163,9 +167,6 @@ function onSubmit(event) {
     }
 
     if (threeDSecure) {
-      closeFrame.addEventListener('click', function () {
-        threeDSecure.cancelVerifyCard(removeFrame());
-      });
       threeDSecure.verifyCard({
         amount: gatewaySettings.connection.threeDSecureAmount || 1,
         nonce: payload.nonce,
@@ -173,30 +174,19 @@ function onSubmit(event) {
         removeFrame: removeFrame
       }, function (err, response) {
         if (err) { return; }
-
-        if (gatewaySettings.onTokenize && typeof(gatewaySettings.onTokenize) === 'function') {
-          gatewaySettings.onTokenize(payload.nonce, payload.description);
-          hideForm();
-        }
+        _completeTokenizationProcess(payload);
       });
     } else {
-      if (gatewaySettings.onTokenize && typeof(gatewaySettings.onTokenize) === 'function') {
-        gatewaySettings.onTokenize(payload.nonce, payload.description);
-        hideForm();
-      }
+      _completeTokenizationProcess(payload);
     }
   });
 }
 
-function addFrame(err, iframe) {
-  bankFrame.appendChild(iframe);
-  threeDModal.classList.remove('hidden');
-}
-
-function removeFrame() {
-  var iframe = bankFrame.querySelector('iframe');
-  threeDModal.classList.add('hidden');
-  iframe.parentNode.removeChild(iframe);
+function _completeTokenizationProcess(payload) {
+  if (gatewaySettings.onTokenize && typeof(gatewaySettings.onTokenize) === 'function') {
+    gatewaySettings.onTokenize(payload.nonce, payload.description);
+    hideForm();
+  }
 }
 
 function showForm () {
@@ -205,6 +195,18 @@ function showForm () {
 
 function hideForm () {
   modal.style.display = 'none';
+}
+
+
+function addFrame(err, iframe) {
+  threeDBankFrame.appendChild(iframe);
+  threeDModal.classList.remove('hidden');
+}
+
+function removeFrame() {
+  var iframe = threeDBankFrame.querySelector('iframe');
+  threeDModal.classList.add('hidden');
+  iframe.parentNode.removeChild(iframe);
 }
 
 export default class {
