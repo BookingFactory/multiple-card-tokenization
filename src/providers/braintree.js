@@ -174,7 +174,7 @@ function onSubmit(event) {
         removeFrame: removeFrame
       }, function (err, response) {
         if (err) { return; }
-        _completeTokenizationProcess(payload);
+        _completeTokenizationProcess(response);
       });
     } else {
       _completeTokenizationProcess(payload);
