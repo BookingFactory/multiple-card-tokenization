@@ -1,13 +1,18 @@
 let libraryPaths = [
-  'https://js.braintreegateway.com/web/3.3.0/js/client.js',
-  'https://js.braintreegateway.com/web/3.3.0/js/hosted-fields.js'
+  'https://js.braintreegateway.com/web/3.6.2/js/client.js',
+  'https://js.braintreegateway.com/web/3.6.2/js/hosted-fields.js',
+  'https://js.braintreegateway.com/web/3.6.2/js/three-d-secure.min.js'
 ];
 let form, submit, closeBTN;
 let hostedFieldsInstance = null;
+let threeDSecure = null;
 let loadingInterval = null;
 let gatewaySettings = {};
 let isReady = false;
 let modal;
+let threeDBankFrame = null;
+let threeDModal = null;
+let threeDCloseFrame = null;
 
 function _injectLibraryScripts() {
   libraryPaths.forEach((path) => {
@@ -60,15 +65,27 @@ function _drawForm() {
         <div>
       </div>
     </div>
+    <div id="bt-modal_${postfix}" class="bt-modal hidden">
+      <div class="bt-mask"></div>
+      <div class="bt-modal-frame">
+        <div class="bt-modal-header">
+          <div class="header-text">Authentication</div>
+        </div>
+        <div class="bt-modal-body"></div>
+        <div class="bt-modal-footer"><a id="text-close_${postfix}" href="#">Cancel</a></div>
+      </div>
+    </div>
   `;
 
   body.appendChild(div);
-
   modal = document.getElementById(`modal_${postfix}`);
+  threeDBankFrame = document.querySelector('.bt-modal-body');
+  threeDModal = document.getElementById(`bt-modal_${postfix}`);
+  threeDCloseFrame = document.getElementById(`text-close_${postfix}`);
 }
 
 function _checkLoading() {
-  if (window.braintree && window.braintree.hostedFields) {
+  if (window.braintree && window.braintree.hostedFields && window.braintree.threeDSecure) {
     isReady = true;
     _initializeScripts();
     clearInterval(loadingInterval);
@@ -91,6 +108,19 @@ function _afterClientCreate(clientErr, clientInstance) {
   if (clientErr) {
     console.error(clientErr);
     return;
+  }
+
+  if (gatewaySettings.connection.threeDSecureEnabled === true) {
+    braintree.threeDSecure.create({
+      client: clientInstance
+    }, function (threeDSecureErr, threeDSecureInstance) {
+      if (threeDSecureErr) { return; }
+      threeDSecure = threeDSecureInstance;
+
+      threeDCloseFrame.addEventListener('click', function () {
+        threeDSecure.cancelVerifyCard(removeFrame());
+      });
+    });
   }
 
   braintree.hostedFields.create({
@@ -136,12 +166,27 @@ function onSubmit(event) {
       return;
     }
 
-    if (gatewaySettings.onTokenize && typeof(gatewaySettings.onTokenize) === 'function') {
-      gatewaySettings.onTokenize(payload.nonce, payload.description);
+    if (threeDSecure) {
+      threeDSecure.verifyCard({
+        amount: gatewaySettings.connection.threeDSecureAmount || 1,
+        nonce: payload.nonce,
+        addFrame: addFrame,
+        removeFrame: removeFrame
+      }, function (err, response) {
+        if (err) { return; }
+        _completeTokenizationProcess(payload);
+      });
+    } else {
+      _completeTokenizationProcess(payload);
     }
-
-    hideForm();
   });
+}
+
+function _completeTokenizationProcess(payload) {
+  if (gatewaySettings.onTokenize && typeof(gatewaySettings.onTokenize) === 'function') {
+    gatewaySettings.onTokenize(payload.nonce, payload.description);
+    hideForm();
+  }
 }
 
 function showForm () {
@@ -150,6 +195,18 @@ function showForm () {
 
 function hideForm () {
   modal.style.display = 'none';
+}
+
+
+function addFrame(err, iframe) {
+  threeDBankFrame.appendChild(iframe);
+  threeDModal.classList.remove('hidden');
+}
+
+function removeFrame() {
+  var iframe = threeDBankFrame.querySelector('iframe');
+  threeDModal.classList.add('hidden');
+  iframe.parentNode.removeChild(iframe);
 }
 
 export default class {
