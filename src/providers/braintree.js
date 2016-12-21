@@ -11,6 +11,8 @@ let gatewaySettings = {};
 let isReady = false;
 let modal;
 let bankFrame = null;
+let threeDModal = null;
+let closeFrame = null;
 
 function _injectLibraryScripts() {
   libraryPaths.forEach((path) => {
@@ -63,17 +65,27 @@ function _drawForm() {
         <div>
       </div>
     </div>
-    <div class="bt-modal-body"></div>
+    <div id="bt-modal_${postfix}" class="bt-modal hidden">
+      <div class="bt-mask"></div>
+      <div class="bt-modal-frame">
+        <div class="bt-modal-header">
+          <div class="header-text">Authentication</div>
+        </div>
+        <div class="bt-modal-body"></div>
+        <div class="bt-modal-footer"><a id="text-close_${postfix}" href="#">Cancel</a></div>
+      </div>
+    </div>
   `;
 
   body.appendChild(div);
   bankFrame = document.querySelector('.bt-modal-body');
-
   modal = document.getElementById(`modal_${postfix}`);
+  threeDModal = document.getElementById(`bt-modal_${postfix}`);
+  closeFrame = document.getElementById(`text-close_${postfix}`);
 }
 
 function _checkLoading() {
-  if (window.braintree && window.braintree.hostedFields) {
+  if (window.braintree && window.braintree.hostedFields && window.braintree.threeDSecure) {
     isReady = true;
     _initializeScripts();
     clearInterval(loadingInterval);
@@ -98,12 +110,14 @@ function _afterClientCreate(clientErr, clientInstance) {
     return;
   }
 
-  braintree.threeDSecure.create({
-    client: clientInstance
-  }, function (threeDSecureErr, threeDSecureInstance) {
-    if (threeDSecureErr) { return; }
-    threeDSecure = threeDSecureInstance;
-  });
+  if (gatewaySettings.connection.threeDSecureEnabled === true) {
+    braintree.threeDSecure.create({
+      client: clientInstance
+    }, function (threeDSecureErr, threeDSecureInstance) {
+      if (threeDSecureErr) { return; }
+      threeDSecure = threeDSecureInstance;
+    });
+  }
 
   braintree.hostedFields.create({
     client: clientInstance,
@@ -149,8 +163,11 @@ function onSubmit(event) {
     }
 
     if (threeDSecure) {
+      closeFrame.addEventListener('click', function () {
+        threeDSecure.cancelVerifyCard(removeFrame());
+      });
       threeDSecure.verifyCard({
-        amount: 1,
+        amount: gatewaySettings.connection.threeDSecureAmount || 1,
         nonce: payload.nonce,
         addFrame: addFrame,
         removeFrame: removeFrame
@@ -173,12 +190,12 @@ function onSubmit(event) {
 
 function addFrame(err, iframe) {
   bankFrame.appendChild(iframe);
-  modal.classList.remove('hidden');
+  threeDModal.classList.remove('hidden');
 }
 
 function removeFrame() {
   var iframe = bankFrame.querySelector('iframe');
-  modal.classList.add('hidden');
+  threeDModal.classList.add('hidden');
   iframe.parentNode.removeChild(iframe);
 }
 
