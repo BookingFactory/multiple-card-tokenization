@@ -27,7 +27,7 @@ function windowEventHandler(event) {
     var status = event.data.type;
     var result = event.data.result;
     if (gatewaySettings.onTokenize && typeof(gatewaySettings.onTokenize) === 'function') {
-      gatewaySettings.onTokenize(event.data.aliasCC, event.data.maskedCC);
+      gatewaySettings.onTokenize(event.data.aliasCC+'||'+event.data.aliasCVV+'||'+event.data.pmethod+'||'+event.data.expm+'||'+event.data.expy+'||'+event.data.maskedCC.substring(event.data.maskedCC.length - 4), event.data.maskedCC);
       hideForm();
     }
   }
