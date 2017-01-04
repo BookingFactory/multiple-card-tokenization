@@ -184,7 +184,7 @@ function onSubmit(event) {
 
 function _completeTokenizationProcess(payload) {
   if (gatewaySettings.onTokenize && typeof(gatewaySettings.onTokenize) === 'function') {
-    gatewaySettings.onTokenize(payload.nonce, payload.description);
+    gatewaySettings.onTokenize(payload.nonce, payload.details.lastTwo);
     hideForm();
   }
 }
