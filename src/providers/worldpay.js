@@ -52,7 +52,7 @@ function _initializeScripts() {
   form.addEventListener('submit', onSubmit.bind(this), false);
 
   Worldpay.useTemplateForm({
-    'clientKey': connection,
+    'clientKey': connection.client_key,
     'form': `#worldpay_card_form_${postfix}`,
     'paymentSection':'paymentSection',
     'display': 'modal',
