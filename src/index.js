@@ -1,11 +1,13 @@
 import braintree_service from './providers/braintree';
 import pci_proxy_service from './providers/pci_proxy';
 import stripe_service from './providers/stripe';
+import worldpay_service from './providers/worldpay'
 
 const SERVICES = {
   braintree_service,
   pci_proxy_service,
-  stripe_service
+  stripe_service,
+  worldpay_service
 }
 
 export function init(service, settings) {
