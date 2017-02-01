@@ -1,12 +1,14 @@
 import braintree_service from './providers/braintree';
 import pci_proxy_service from './providers/pci_proxy';
 import stripe_service from './providers/stripe';
+import omise_service from './providers/omise';
 import worldpay_service from './providers/worldpay'
 
 const SERVICES = {
   braintree_service,
   pci_proxy_service,
   stripe_service,
+  omise_service,
   worldpay_service
 }
 
