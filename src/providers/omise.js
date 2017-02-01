@@ -97,7 +97,7 @@ function _initializeScripts() {
   expDateField.addEventListener('keydown', manageSlashAtExpirationDate.bind(this), false);
   numberField.addEventListener('keydown', manageCardNumber.bind(this), false);
 
-  Omise.setPublicKey(gatewaySettings.connection.public_key);
+  Omise.setPublicKey(connection);
 }
 
 function onSubmit(event) {
