@@ -9,7 +9,7 @@ function _drawForm() {
   let div  = document.createElement('div');
 
   div.innerHTML = `
-    <div class="multiple_card_tokenization__modal_overlay multiple_card_tokenization__modal_overlay__pci_proxy" style="display: none;" id="modal_${postfix}">
+    <div class="multiple_card_tokenization__modal_overlay multiple_card_tokenization__modal_overlay__pcibooking" style="display: none;" id="modal_${postfix}">
       <div class="multiple_card_tokenization__modal_window">
         <div class="multiple_card_tokenization__demo-frame">
         <div>
@@ -27,7 +27,7 @@ function windowEventHandler(event) {
     var status = event.data.success;
     var token = event.data.token;
     if (gatewaySettings.onTokenize && typeof(gatewaySettings.onTokenize) === 'function' && status === true) {
-      gatewaySettings.onTokenize(token, 'bla-bla');
+      gatewaySettings.onTokenize(token, 'is stored at PCIBooking');
       hideForm();
     }
   }
@@ -42,15 +42,21 @@ function _initializeScripts() {
 }
 
 function showForm () {
+  const { postfix } = gatewaySettings;
   let modal_inner = modal.getElementsByClassName('multiple_card_tokenization__demo-frame')[0];
+  let closeBTN;
 
-  modal_inner.innerHTML = `<iframe width="100%"
-          height="100%"
-          frameborder="0"
-          border="0"
-          src="${DOMAIN}/api/public/v1/credit_card_form">`;
+  modal_inner.innerHTML = `
+    <button id="close-form-${postfix}" class="multiple_card_tokenization__close-button"></button>
+    <iframe width="100%"
+      height="100%"
+      frameborder="0"
+      border="0"
+      src="${DOMAIN}/api/public/v1/credit_card_form"></iframe>`;
 
   modal.style.display = 'block';
+  closeBTN = document.querySelector(`#close-form-${postfix}`);
+  closeBTN.addEventListener('click', hideForm.bind(this), false);
 }
 
 function hideForm () {
