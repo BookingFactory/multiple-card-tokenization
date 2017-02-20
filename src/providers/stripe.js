@@ -9,6 +9,18 @@ let isReady = false;
 let modal;
 const acceptedKeys = [48,49,50,51,52,53,54,55,56,57,8,9,13,37,38,39,40];
 const controlKeys = [8,9,13,37,38,39,40];
+const keyCodes = {
+  48: '0',
+  49: '1',
+  50: '2',
+  51: '3',
+  52: '4',
+  53: '5',
+  54: '6',
+  55: '7',
+  56: '8',
+  57: '9'
+}
 
 function _injectLibraryScripts() {
   libraryPaths.forEach((path) => {
@@ -105,11 +117,15 @@ function onSubmit(event) {
     exp_month: document.querySelector(`#expiration-date_${postfix}`).value.split('/')[0],
     exp_year: document.querySelector(`#expiration-date_${postfix}`).value.split('/')[1]
   }, function(status, response) {
-    if (gatewaySettings.onTokenize && typeof(gatewaySettings.onTokenize) === 'function') {
-      gatewaySettings.onTokenize(response.id, response.card.last4);
-    }
+    if (response.error) {
+      alert(response.error.message);
+    } else {
+      if (gatewaySettings.onTokenize && typeof(gatewaySettings.onTokenize) === 'function') {
+        gatewaySettings.onTokenize(response.id, response.card.last4);
+      }
 
-    hideForm();
+      hideForm();
+    }
   });
 }
 
@@ -127,7 +143,7 @@ function manageSlashAtExpirationDate (event) {
   } else if (controlKeys.indexOf(event.keyCode) != -1) {
   } else {
     if (event.target.value.length == 1) {
-      event.target.value = event.target.value + event.key + '/';
+      event.target.value = event.target.value + keyCodes[event.keyCode] + '/';
       event.preventDefault();
     }
   }
@@ -147,7 +163,7 @@ function manageCardNumber (event) {
     let used_steps = event.target.value[0] == '3' ? amex_steps : steps;
 
     if (used_steps.indexOf(val.length + 1) != -1) {
-      event.target.value = event.target.value + event.key + ' ';
+      event.target.value = event.target.value + keyCodes[event.keyCode] + ' ';
       event.preventDefault();
     }
 
