@@ -35,7 +35,7 @@ function _drawForm() {
   let div  = document.createElement('div');
 
   div.innerHTML = `
-    <div class="multiple_card_tokenization__modal_overlay multiple_card_tokenization__modal_overlay__braintree" style="display: none;" id="modal_${postfix}">
+    <div class="multiple_card_tokenization__modal_overlay multiple_card_tokenization__modal_overlay__braintree multiple_card_tokenization__loading" style="display: none;" id="modal_${postfix}">
       <div class="multiple_card_tokenization__modal_window">
         <div class="multiple_card_tokenization__demo-frame">
           <form action="/" method="post" id="braintree_card_form_${postfix}" >
@@ -62,6 +62,7 @@ function _drawForm() {
             <input type="submit" class="multiple_card_tokenization__button button--small button--green" value="Save Card Details" id="submit_${postfix}"/>
             </div>
           </form>
+          <div class="multiple_card_tokenization__loader">Loading</div>
         <div>
       </div>
     </div>
@@ -85,7 +86,7 @@ function _drawForm() {
 }
 
 function _checkLoading() {
-  if (window.braintree && window.braintree.hostedFields && window.braintree.threeDSecure) {
+  if (window.braintree && window.braintree.client && window.braintree.hostedFields && window.braintree.threeDSecure) {
     isReady = true;
     _initializeScripts();
     clearInterval(loadingInterval);
@@ -155,14 +156,26 @@ function hostedFieldsCallback(hostedFieldsErr, hostedFieldsInstanceLocale) {
   submit.removeAttribute('disabled');
   form.addEventListener('submit', onSubmit.bind(this), false);
   closeBTN.addEventListener('click', hideForm.bind(this), false);
+  modal.classList.remove('multiple_card_tokenization__loading');
 }
 
 function onSubmit(event) {
   event.preventDefault();
 
+  let fieldNames = {
+    'number': 'Card Number',
+    'cvv': 'CVV',
+    'expirationDate': 'Expiration Date'
+  }
+
   hostedFieldsInstance.tokenize((tokenizeErr, payload) => {
     if (tokenizeErr) {
       console.error(tokenizeErr);
+      if (tokenizeErr.code === "HOSTED_FIELDS_FIELDS_INVALID") {
+        alert('Invalid value in fields: ' + (tokenizeErr.details.invalidFieldKeys.map(function(field) {return fieldNames[field];}).join(', ')));
+      } else {
+        alert(tokenizeErr.message);
+      }
       return;
     }
 
@@ -173,7 +186,7 @@ function onSubmit(event) {
         addFrame: addFrame,
         removeFrame: removeFrame
       }, function (err, response) {
-        if (err) { return; }
+        if (err) { console.log(err); return; }
         _completeTokenizationProcess(response);
       });
     } else {
@@ -193,7 +206,10 @@ function showForm () {
   modal.style.display = 'block';
 }
 
-function hideForm () {
+function hideForm (event) {
+  if (event && event.preventDefault) {
+    event.preventDefault();
+  }
   modal.style.display = 'none';
 }
 
