@@ -29,10 +29,12 @@ function _injectLibraryScript(path) {
 }
 
 function _drawForm() {
-  const { postfix } = gatewaySettings;
+  const { postfix, showSubmitButton, target } = gatewaySettings;
 
   let body = document.getElementsByTagName('body').item(0);
-  let div  = document.createElement('div');
+  let div  = target ? document.getElementById(target) : document.createElement('div');
+  let close_button = showSubmitButton === false ? '' : `<button id="close-form-${postfix}" class="multiple_card_tokenization__close-button"></button>`;
+  let submit_button = showSubmitButton === false ? '' : `<div class="multiple_card_tokenization__button-container"><input type="submit" class="multiple_card_tokenization__button button--small button--green" value="Save Card Details" id="submit_${postfix}"/></div>`;
 
   div.innerHTML = `
     <div class="multiple_card_tokenization__modal_overlay multiple_card_tokenization__modal_overlay__braintree multiple_card_tokenization__loading" style="display: none;" id="modal_${postfix}">
@@ -41,15 +43,20 @@ function _drawForm() {
           <form action="/" method="post" id="braintree_card_form_${postfix}" >
             <legend class="multiple_card_tokenization__form-legend">
               Card Details
-              <button id="close-form-${postfix}" class="multiple_card_tokenization__close-button"></button>
+              ${close_button}
             </legend>
             <div class="multiple_card_tokenization__field-container">
               <label class="multiple_card_tokenization__hosted-fields--label" for="card-number_${postfix}">Card Number</label>
               <div id="card-number_${postfix}" class="multiple_card_tokenization__hosted-field"></div>
             </div>
 
+            <div class="multiple_card_tokenization__field-container">
+              <label class="multiple_card_tokenization__hosted-fields--label" for="cardholder-name_${postfix}">Cardholder Name</label>
+              <input id="cardholder-name_${postfix}" class="multiple_card_tokenization__hosted-field" type="text" placeholder="CARDHOLDER NAME">
+            </div>
+
             <div class="multiple_card_tokenization__field-container multiple_card_tokenization__field-container__half-field">
-              <label class="multiple_card_tokenization__hosted-fields--label" for="expiration-date_${postfix}">Expiration Date</label>
+              <label class="multiple_card_tokenization__hosted-fields--label" for="expiration-date_${postfix}">Exp. Date</label>
               <div id="expiration-date_${postfix}" class="multiple_card_tokenization__hosted-field"></div>
             </div>
 
@@ -57,10 +64,9 @@ function _drawForm() {
               <label class="multiple_card_tokenization__hosted-fields--label" for="cvv_${postfix}">CVV</label>
               <div id="cvv_${postfix}" class="multiple_card_tokenization__hosted-field"></div>
             </div>
+            <div class="multiple_card_tokenization__field-clear"></div>
 
-            <div class="multiple_card_tokenization__button-container">
-            <input type="submit" class="multiple_card_tokenization__button button--small button--green" value="Save Card Details" id="submit_${postfix}"/>
-            </div>
+            ${submit_button}
           </form>
           <div class="multiple_card_tokenization__loader">Loading</div>
         <div>
@@ -78,7 +84,7 @@ function _drawForm() {
     </div>
   `;
 
-  body.appendChild(div);
+  if (!target) {body.appendChild(div);}
   modal = document.getElementById(`modal_${postfix}`);
   threeDBankFrame = document.querySelector('.bt-modal-body');
   threeDModal = document.getElementById(`bt-modal_${postfix}`);
@@ -94,12 +100,12 @@ function _checkLoading() {
 }
 
 function _initializeScripts() {
-  const { postfix, connection } = gatewaySettings;
+  const { postfix, connection, showSubmitButton } = gatewaySettings;
   const { token } = connection;
 
   form     = document.querySelector(`#braintree_card_form_${postfix}`);
-  submit   = document.querySelector(`#submit_${postfix}`);
-  closeBTN = document.querySelector(`#close-form-${postfix}`);
+  submit   = showSubmitButton === false ? null : document.querySelector(`#submit_${postfix}`);
+  closeBTN = showSubmitButton === false ? null : document.querySelector(`#close-form-${postfix}`);
 
   braintree.client.create({ authorization: token }, _afterClientCreate.bind(this));
 }
@@ -132,15 +138,15 @@ function _afterClientCreate(clientErr, clientInstance) {
     fields: {
       number: {
         selector: `#card-number_${postfix}`,
-        placeholder: '4111 1111 1111 1111'
+        placeholder: 'XXXX XXXX XXXX XXXX'
       },
       cvv: {
         selector: `#cvv_${postfix}`,
-        placeholder: '123'
+        placeholder: 'XXX'
       },
       expirationDate: {
         selector: `#expiration-date_${postfix}`,
-        placeholder: '10 / 2019'
+        placeholder: 'MM / YYYY'
       }
     }
   }, hostedFieldsCallback.bind(this));
@@ -153,9 +159,11 @@ function hostedFieldsCallback(hostedFieldsErr, hostedFieldsInstanceLocale) {
   }
 
   hostedFieldsInstance = hostedFieldsInstanceLocale;
-  submit.removeAttribute('disabled');
   form.addEventListener('submit', onSubmit.bind(this), false);
-  closeBTN.addEventListener('click', hideForm.bind(this), false);
+  if (gatewaySettings.showSubmitButton === undefined || !gatewaySettings.showSubmitButton === false) {
+    submit.removeAttribute('disabled');
+    closeBTN.addEventListener('click', hideForm.bind(this), false);
+  }
   modal.classList.remove('multiple_card_tokenization__loading');
 }
 
@@ -169,12 +177,18 @@ function onSubmit(event) {
   }
 
   hostedFieldsInstance.tokenize((tokenizeErr, payload) => {
+    let message = '';
     if (tokenizeErr) {
-      console.error(tokenizeErr);
       if (tokenizeErr.code === "HOSTED_FIELDS_FIELDS_INVALID") {
-        alert('Invalid value in fields: ' + (tokenizeErr.details.invalidFieldKeys.map(function(field) {return fieldNames[field];}).join(', ')));
+        message = 'Invalid value in fields: ' + (tokenizeErr.details.invalidFieldKeys.map(function(field) {return fieldNames[field];}).join(', '));
       } else {
-        alert(tokenizeErr.message);
+        message = tokenizeErr.message;
+      }
+
+      if (gatewaySettings.onError && typeof(gatewaySettings.onError) === 'function') {
+        gatewaySettings.onError(message);
+      } else {
+        alert(message);
       }
       return;
     }
@@ -197,7 +211,7 @@ function onSubmit(event) {
 
 function _completeTokenizationProcess(payload) {
   if (gatewaySettings.onTokenize && typeof(gatewaySettings.onTokenize) === 'function') {
-    gatewaySettings.onTokenize(payload.nonce, payload.details.lastTwo);
+    gatewaySettings.onTokenize(payload.nonce, payload.details.lastTwo, document.querySelector(`#cardholder-name_${gatewaySettings.postfix}`).value);
     hideForm();
   }
 }
@@ -210,9 +224,15 @@ function hideForm (event) {
   if (event && event.preventDefault) {
     event.preventDefault();
   }
-  modal.style.display = 'none';
+
+  if (gatewaySettings.showSubmitButton === undefined || !gatewaySettings.showSubmitButton === false) {
+    modal.style.display = 'none';
+  }
 }
 
+function tokenize () {
+  onSubmit({preventDefault: function() {}});
+}
 
 function addFrame(err, iframe) {
   threeDBankFrame.appendChild(iframe);
@@ -239,4 +259,5 @@ export default class {
 
   showForm = showForm
   hideForm = hideForm
+  tokenize = tokenize
 }

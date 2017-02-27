@@ -37,10 +37,12 @@ function _injectLibraryScript(path) {
 }
 
 function _drawForm() {
-  const { postfix } = gatewaySettings;
+  const { postfix, showSubmitButton } = gatewaySettings;
 
   let body = document.getElementsByTagName('body').item(0);
   let div  = document.createElement('div');
+  let close_button = showSubmitButton === false ? '' : `<button id="close-form-${postfix}" class="multiple_card_tokenization__close-button"></button>`;
+  let submit_button = showSubmitButton === false ? '' : `<div class="multiple_card_tokenization__button-container"><input type="submit" class="multiple_card_tokenization__button button--small button--green" value="Save Card Details" id="submit_${postfix}"/></div>`;
 
   div.innerHTML = `
     <div class="multiple_card_tokenization__modal_overlay multiple_card_tokenization__modal_overlay__braintree" style="display: none;" id="modal_${postfix}">
@@ -49,11 +51,16 @@ function _drawForm() {
           <form action="/" method="post" id="stripe_card_form_${postfix}" >
             <legend class="multiple_card_tokenization__form-legend">
               Card Details
-              <button id="close-form-${postfix}" class="multiple_card_tokenization__close-button"></button>
+              ${close_button}
             </legend>
             <div class="multiple_card_tokenization__field-container">
               <label class="multiple_card_tokenization__hosted-fields--label" for="card-number_${postfix}">Card Number</label>
               <input type="text" id="card-number_${postfix}" class="multiple_card_tokenization__hosted-field" />
+            </div>
+
+            <div class="multiple_card_tokenization__field-container">
+              <label class="multiple_card_tokenization__hosted-fields--label" for="cardholder-name_${postfix}">Cardholder Name</label>
+              <input type="text" id="cardholder-name_${postfix}" class="multiple_card_tokenization__hosted-field" />
             </div>
 
             <div class="multiple_card_tokenization__field-container multiple_card_tokenization__field-container__half-field">
@@ -66,9 +73,7 @@ function _drawForm() {
               <input type="text" id="cvv_${postfix}" class="multiple_card_tokenization__hosted-field" />
             </div>
 
-            <div class="multiple_card_tokenization__button-container">
-            <input type="submit" class="multiple_card_tokenization__button button--small button--green" value="Save Card Details" id="submit_${postfix}"/>
-            </div>
+            ${submit_button}
           </form>
         <div>
       </div>
@@ -89,17 +94,19 @@ function _checkLoading() {
 }
 
 function _initializeScripts() {
-  const { postfix, connection } = gatewaySettings;
+  const { postfix, connection, showSubmitButton } = gatewaySettings;
   const { token } = connection;
 
   form     = document.querySelector(`#stripe_card_form_${postfix}`);
-  submit   = document.querySelector(`#submit_${postfix}`);
-  closeBTN = document.querySelector(`#close-form-${postfix}`);
+  if (gatewaySettings.showSubmitButton === undefined || !gatewaySettings.showSubmitButton === false) {
+    submit   = document.querySelector(`#submit_${postfix}`);
+    closeBTN = document.querySelector(`#close-form-${postfix}`);
+    closeBTN.addEventListener('click', hideForm.bind(this), false);
+  }
   numberField = document.querySelector(`#card-number_${postfix}`);
   expDateField = document.querySelector(`#expiration-date_${postfix}`);
 
   form.addEventListener('submit', onSubmit.bind(this), false);
-  closeBTN.addEventListener('click', hideForm.bind(this), false);
   expDateField.addEventListener('keydown', manageSlashAtExpirationDate.bind(this), false);
   numberField.addEventListener('keydown', manageCardNumber.bind(this), false);
 
@@ -118,10 +125,14 @@ function onSubmit(event) {
     exp_year: document.querySelector(`#expiration-date_${postfix}`).value.split('/')[1]
   }, function(status, response) {
     if (response.error) {
-      alert(response.error.message);
+      if (gatewaySettings.onError && typeof(gatewaySettings.onError) === 'function') {
+        gatewaySettings.onError(message);
+      } else {
+        alert(message);
+      }
     } else {
       if (gatewaySettings.onTokenize && typeof(gatewaySettings.onTokenize) === 'function') {
-        gatewaySettings.onTokenize(response.id, response.card.last4);
+        gatewaySettings.onTokenize(response.id, response.card.last4, document.querySelector(`#cardholder-name_${postfix}`).value);
       }
 
       hideForm();
@@ -134,7 +145,13 @@ function showForm () {
 }
 
 function hideForm () {
-  modal.style.display = 'none';
+  if (gatewaySettings.showSubmitButton === undefined || !gatewaySettings.showSubmitButton === false) {
+    modal.style.display = 'none';
+  }
+}
+
+function tokenize () {
+  onSubmit({preventDefault: function() {}});
 }
 
 function manageSlashAtExpirationDate (event) {
@@ -187,4 +204,5 @@ export default class {
 
   showForm = showForm
   hideForm = hideForm
+  tokenize = tokenize
 }
