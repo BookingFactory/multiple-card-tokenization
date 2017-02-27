@@ -37,10 +37,10 @@ function _injectLibraryScript(path) {
 }
 
 function _drawForm() {
-  const { postfix, showSubmitButton } = gatewaySettings;
+  const { postfix, showSubmitButton, target } = gatewaySettings;
 
   let body = document.getElementsByTagName('body').item(0);
-  let div  = document.createElement('div');
+  let div  = target ? document.getElementById(target) : document.createElement('div');
   let close_button = showSubmitButton === false ? '' : `<button id="close-form-${postfix}" class="multiple_card_tokenization__close-button"></button>`;
   let submit_button = showSubmitButton === false ? '' : `<div class="multiple_card_tokenization__button-container"><input type="submit" class="multiple_card_tokenization__button button--small button--green" value="Save Card Details" id="submit_${postfix}"/></div>`;
 
@@ -55,22 +55,22 @@ function _drawForm() {
             </legend>
             <div class="multiple_card_tokenization__field-container">
               <label class="multiple_card_tokenization__hosted-fields--label" for="card-number_${postfix}">Card Number</label>
-              <input type="text" id="card-number_${postfix}" class="multiple_card_tokenization__hosted-field" />
+              <input type="text" id="card-number_${postfix}" class="multiple_card_tokenization__hosted-field" placeholder="XXXX XXXX XXXX XXXX" />
             </div>
 
             <div class="multiple_card_tokenization__field-container">
               <label class="multiple_card_tokenization__hosted-fields--label" for="cardholder-name_${postfix}">Cardholder Name</label>
-              <input type="text" id="cardholder-name_${postfix}" class="multiple_card_tokenization__hosted-field" />
+              <input type="text" id="cardholder-name_${postfix}" class="multiple_card_tokenization__hosted-field" placeholder="CARDHOLDER NAME" />
             </div>
 
             <div class="multiple_card_tokenization__field-container multiple_card_tokenization__field-container__half-field">
-              <label class="multiple_card_tokenization__hosted-fields--label" for="expiration-date_${postfix}">Expiration Date</label>
-              <input type="text" id="expiration-date_${postfix}" class="multiple_card_tokenization__hosted-field" />
+              <label class="multiple_card_tokenization__hosted-fields--label" for="expiration-date_${postfix}">Exp. Date</label>
+              <input type="text" id="expiration-date_${postfix}" class="multiple_card_tokenization__hosted-field" placeholder="MM / YY" />
             </div>
 
             <div class="multiple_card_tokenization__field-container multiple_card_tokenization__field-container__half-field">
               <label class="multiple_card_tokenization__hosted-fields--label" for="cvv_${postfix}">CVV</label>
-              <input type="text" id="cvv_${postfix}" class="multiple_card_tokenization__hosted-field" />
+              <input type="text" id="cvv_${postfix}" class="multiple_card_tokenization__hosted-field" placeholder="XXX" />
             </div>
 
             ${submit_button}
@@ -80,7 +80,7 @@ function _drawForm() {
     </div>
   `;
 
-  body.appendChild(div);
+  if (!target) {body.appendChild(div);}
 
   modal = document.getElementById(`modal_${postfix}`);
 }
