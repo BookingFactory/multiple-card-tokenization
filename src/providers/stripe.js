@@ -45,7 +45,7 @@ function _drawForm() {
   let submit_button = showSubmitButton === false ? '' : `<div class="multiple_card_tokenization__button-container"><input type="submit" class="multiple_card_tokenization__button button--small button--green" value="Save Card Details" id="submit_${postfix}"/></div>`;
 
   div.innerHTML = `
-    <div class="multiple_card_tokenization__modal_overlay multiple_card_tokenization__modal_overlay__braintree" style="display: none;" id="modal_${postfix}">
+    <div class="multiple_card_tokenization__modal_overlay multiple_card_tokenization__modal_overlay__stripe" style="display: none;" id="modal_${postfix}">
       <div class="multiple_card_tokenization__modal_window">
         <div class="multiple_card_tokenization__demo-frame">
           <form action="/" method="post" id="stripe_card_form_${postfix}" >
@@ -125,6 +125,10 @@ function onSubmit(event) {
     exp_year: document.querySelector(`#expiration-date_${postfix}`).value.split('/')[1]
   }, function(status, response) {
     if (response.error) {
+      let message = response.error.message;
+      if (message === "Missing required param: card[exp_year].") {
+        message = 'Could not find payment information';
+      }
       if (gatewaySettings.onError && typeof(gatewaySettings.onError) === 'function') {
         gatewaySettings.onError(message);
       } else {

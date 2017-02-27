@@ -34,7 +34,7 @@ function _drawForm() {
 
 
   div.innerHTML = `
-    <div class="multiple_card_tokenization__modal_overlay multiple_card_tokenization__modal_overlay__braintree" style="display: none;" id="modal_${postfix}">
+    <div class="multiple_card_tokenization__modal_overlay multiple_card_tokenization__modal_overlay__omise" style="display: none;" id="modal_${postfix}">
       <div class="multiple_card_tokenization__modal_window">
         <div class="multiple_card_tokenization__demo-frame">
           <form action="/" method="post" id="omise_card_form_${postfix}" >
@@ -119,9 +119,14 @@ function onSubmit(event) {
       if (gatewaySettings.onTokenize && typeof(gatewaySettings.onTokenize) === 'function') {
         gatewaySettings.onTokenize(response.id, response.card.last_digits, document.querySelector(`#card-name_${postfix}`).value);
       }
+      hideForm();
+    } else {
+      if (gatewaySettings.onError && typeof(gatewaySettings.onError) === 'function') {
+        gatewaySettings.onError(response.message);
+      } else {
+        alert(response.message);
+      }
     }
-
-    hideForm();
   });
 }
 
