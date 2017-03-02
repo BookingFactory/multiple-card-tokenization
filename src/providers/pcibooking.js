@@ -3,10 +3,10 @@ let modal;
 const DOMAIN = "https://app.thebookingfactory.com";
 
 function _drawForm() {
-  const { postfix } = gatewaySettings;
+  const { postfix, target } = gatewaySettings;
 
   let body = document.getElementsByTagName('body').item(0);
-  let div  = document.createElement('div');
+  let div  = target ? document.getElementById(target) : document.createElement('div');
 
   div.innerHTML = `
     <div class="multiple_card_tokenization__modal_overlay multiple_card_tokenization__modal_overlay__pcibooking" style="display: none;" id="modal_${postfix}">
@@ -17,7 +17,7 @@ function _drawForm() {
     </div>
   `;
 
-  body.appendChild(div);
+  if (!target) {body.appendChild(div);}
   modal = document.getElementById(`modal_${postfix}`);
 }
 
@@ -42,25 +42,35 @@ function _initializeScripts() {
 }
 
 function showForm () {
-  const { postfix } = gatewaySettings;
+  const { postfix, showSubmitButton } = gatewaySettings;
   let modal_inner = modal.getElementsByClassName('multiple_card_tokenization__demo-frame')[0];
   let closeBTN;
+  let close_button = showSubmitButton === false ? '' : `<button id="close-form-${postfix}" class="multiple_card_tokenization__close-button"></button>`;
 
   modal_inner.innerHTML = `
-    <button id="close-form-${postfix}" class="multiple_card_tokenization__close-button"></button>
+    ${close_button}
     <iframe width="100%"
       height="100%"
       frameborder="0"
       border="0"
+      id="pcibooking_frame"
       src="${DOMAIN}/api/public/v1/credit_card_form"></iframe>`;
 
   modal.style.display = 'block';
-  closeBTN = document.querySelector(`#close-form-${postfix}`);
-  closeBTN.addEventListener('click', hideForm.bind(this), false);
+  if (showSubmitButton) {
+    closeBTN = document.querySelector(`#close-form-${postfix}`);
+    closeBTN.addEventListener('click', hideForm.bind(this), false);
+  }
+}
+
+function tokenize () {
+  document.getElementById('pcibooking_frame').contentWindow.postMessage('submit', "https://service.pcibooking.net");
 }
 
 function hideForm () {
-  modal.style.display = 'none';
+  if (gatewaySettings.showSubmitButton === undefined || gatewaySettings.showSubmitButton === true) {
+    modal.style.display = 'none';
+  }
 }
 
 export default class {
@@ -76,4 +86,5 @@ export default class {
 
   showForm = showForm
   hideForm = hideForm
+  tokenize = tokenize
 }
