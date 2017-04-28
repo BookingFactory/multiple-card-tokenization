@@ -122,7 +122,8 @@ function onSubmit(event) {
     number: document.querySelector(`#card-number_${postfix}`).value,
     cvc: document.querySelector(`#cvv_${postfix}`).value,
     exp_month: document.querySelector(`#expiration-date_${postfix}`).value.split('/')[0],
-    exp_year: document.querySelector(`#expiration-date_${postfix}`).value.split('/')[1]
+    exp_year: document.querySelector(`#expiration-date_${postfix}`).value.split('/')[1],
+    name: document.querySelector(`#cardholder-name_${postfix}`).value
   }, function(status, response) {
     if (response.error) {
       let message = response.error.message;
