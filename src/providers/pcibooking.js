@@ -22,6 +22,13 @@ function _drawForm() {
 }
 
 function windowEventHandler(event) {
+  if (event.origin.toLowerCase() === "https://service.pcibooking.net" || event.origin.toLowerCase() === "https://service.pcibooking.net/") {
+    if (event.data == 'valid') {
+      document.getElementById('pcibooking_frame').contentWindow.postMessage('submit', "https://service.pcibooking.net");
+    } else {
+      gatewaySettings.onError('Payment information is invalid, please check detaild and try again.');
+    }
+  }
   // Make sure to check for event.origin here
   if (event.origin === DOMAIN && event.data) {
     var status = event.data.success;
@@ -64,7 +71,7 @@ function showForm () {
 }
 
 function tokenize () {
-  document.getElementById('pcibooking_frame').contentWindow.postMessage('submit', "https://service.pcibooking.net");
+  document.getElementById('pcibooking_frame').contentWindow.postMessage('validate', "https://service.pcibooking.net");
 }
 
 function hideForm () {
