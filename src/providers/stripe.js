@@ -114,7 +114,7 @@ function _initializeScripts() {
 }
 
 function onSubmit(event) {
-  const { postfix, connection } = gatewaySettings;
+  const { postfix, connection, customer_data } = gatewaySettings;
 
   event.preventDefault();
 
@@ -123,7 +123,11 @@ function onSubmit(event) {
     cvc: document.querySelector(`#cvv_${postfix}`).value,
     exp_month: document.querySelector(`#expiration-date_${postfix}`).value.split('/')[0],
     exp_year: document.querySelector(`#expiration-date_${postfix}`).value.split('/')[1],
-    name: document.querySelector(`#cardholder-name_${postfix}`).value
+    name: document.querySelector(`#cardholder-name_${postfix}`).value,
+    address_city: customer_data.city,
+    address_country: customer_data.country,
+    address_line1: customer_data.address,
+    address_zip: customer_data.zip_code
   }, function(status, response) {
     if (response.error) {
       let message = response.error.message;
@@ -155,7 +159,8 @@ function hideForm () {
   }
 }
 
-function tokenize () {
+function tokenize (customer_information) {
+  gatewaySettings.customer_data = customer_information;
   onSubmit({preventDefault: function() {}});
 }
 
