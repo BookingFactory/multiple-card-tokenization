@@ -115,7 +115,6 @@ function _initializeScripts() {
 
 function onSubmit(event) {
   const { postfix, connection, customer_data } = gatewaySettings;
-
   event.preventDefault();
 
   Stripe.card.createToken({
@@ -124,10 +123,10 @@ function onSubmit(event) {
     exp_month: document.querySelector(`#expiration-date_${postfix}`).value.split('/')[0],
     exp_year: document.querySelector(`#expiration-date_${postfix}`).value.split('/')[1],
     name: document.querySelector(`#cardholder-name_${postfix}`).value,
-    address_city: customer_data.city,
-    address_country: customer_data.country,
-    address_line1: customer_data.address,
-    address_zip: customer_data.zip_code
+    address_city: customer_data ? customer_data.city : null,
+    address_country: customer_data ? customer_data.country : null,
+    address_line1: customer_data ? customer_data.address : null,
+    address_zip: customer_data ? customer_data.zip_code : null
   }, function(status, response) {
     if (response.error) {
       let message = response.error.message;
@@ -149,7 +148,8 @@ function onSubmit(event) {
   });
 }
 
-function showForm () {
+function showForm (customer_information) {
+  gatewaySettings.customer_data = customer_information;
   modal.style.display = 'block';
 }
 
