@@ -1,5 +1,5 @@
 let libraryPaths = [
-  'https://js.stripe.com/v2/'
+  'https://js.stripe.com/v3/'
 ];
 let form, submit, closeBTN, numberField, expDateField;
 let hostedFieldsInstance = null;
@@ -7,6 +7,9 @@ let loadingInterval = null;
 let gatewaySettings = {};
 let isReady = false;
 let modal;
+let stripe;
+let elements;
+let card;
 const acceptedKeys = [48,49,50,51,52,53,54,55,56,57,8,9,13,37,38,39,40];
 const controlKeys = [8,9,13,37,38,39,40];
 const keyCodes = {
@@ -48,29 +51,21 @@ function _drawForm() {
     <div class="multiple_card_tokenization__modal_overlay multiple_card_tokenization__modal_overlay__stripe" style="display: none;" id="modal_${postfix}">
       <div class="multiple_card_tokenization__modal_window">
         <div class="multiple_card_tokenization__demo-frame">
-          <form action="/" method="post" id="stripe_card_form_${postfix}" >
-            <legend class="multiple_card_tokenization__form-legend">
-              Card Details
-              ${close_button}
-            </legend>
-            <div class="multiple_card_tokenization__field-container">
-              <label class="multiple_card_tokenization__hosted-fields--label" for="card-number_${postfix}">Card Number</label>
-              <input type="text" id="card-number_${postfix}" class="multiple_card_tokenization__hosted-field" placeholder="XXXX XXXX XXXX XXXX" />
-            </div>
-
-            <div class="multiple_card_tokenization__field-container">
-              <label class="multiple_card_tokenization__hosted-fields--label" for="cardholder-name_${postfix}">Cardholder Name</label>
-              <input type="text" id="cardholder-name_${postfix}" class="multiple_card_tokenization__hosted-field" placeholder="CARDHOLDER NAME" />
-            </div>
-
-            <div class="multiple_card_tokenization__field-container multiple_card_tokenization__field-container__half-field">
-              <label class="multiple_card_tokenization__hosted-fields--label" for="expiration-date_${postfix}">Exp. Date</label>
-              <input type="text" id="expiration-date_${postfix}" class="multiple_card_tokenization__hosted-field" placeholder="MM / YY" />
-            </div>
-
-            <div class="multiple_card_tokenization__field-container multiple_card_tokenization__field-container__half-field">
-              <label class="multiple_card_tokenization__hosted-fields--label" for="cvv_${postfix}">CVV</label>
-              <input type="text" id="cvv_${postfix}" class="multiple_card_tokenization__hosted-field" placeholder="XXX" />
+          <legend class="multiple_card_tokenization__form-legend">
+            Card Details
+            ${close_button}
+          </legend>
+          <form action="/" method="post" id="stripe_card_form_${postfix}">
+            <div class="form-row">
+              <div class="multiple_card_tokenization__field-container">
+                <label class="multiple_card_tokenization__hosted-fields--label" for="cardholder-name_${postfix}">Cardholder Name</label>
+                <input type="text" id="cardholder-name_${postfix}" class="multiple_card_tokenization__hosted-field" placeholder="CARDHOLDER NAME" />
+              </div>
+              <div class="multiple_card_tokenization__field-container">
+                <label class="multiple_card_tokenization__hosted-fields--label">Card Data and Postal Code</label>
+                <div id="card-element"></div>
+                <div id="card-errors" role="alert"></div>
+              </div>
             </div>
 
             ${submit_button}
@@ -97,39 +92,43 @@ function _initializeScripts() {
   const { postfix, connection, showSubmitButton } = gatewaySettings;
   const { token } = connection;
 
-  form     = document.querySelector(`#stripe_card_form_${postfix}`);
+  form = document.querySelector(`#stripe_card_form_${postfix}`);
   if (gatewaySettings.showSubmitButton === undefined || !gatewaySettings.showSubmitButton === false) {
-    submit   = document.querySelector(`#submit_${postfix}`);
+    submit = document.querySelector(`#submit_${postfix}`);
     closeBTN = document.querySelector(`#close-form-${postfix}`);
     closeBTN.addEventListener('click', hideForm.bind(this), false);
   }
-  numberField = document.querySelector(`#card-number_${postfix}`);
-  expDateField = document.querySelector(`#expiration-date_${postfix}`);
-
   form.addEventListener('submit', onSubmit.bind(this), false);
-  expDateField.addEventListener('keydown', manageSlashAtExpirationDate.bind(this), false);
-  numberField.addEventListener('keydown', manageCardNumber.bind(this), false);
+  stripe = Stripe(token);
+  elements = stripe.elements();
 
-  Stripe.setPublishableKey(token);
+  var style = {
+    base: {
+      marginTop: '5px',
+      fontSize: '14px',
+      lineHeight: '24px'
+    }
+  };
+
+  card = elements.create('card', {style: style});
+  card.mount('#card-element');
+  card.addEventListener('change', function(event) {
+    var displayError = document.getElementById('card-errors');
+    if (event.error) {
+      displayError.textContent = event.error.message;
+    } else {
+      displayError.textContent = '';
+    }
+  });
 }
 
 function onSubmit(event) {
-  const { postfix, connection, customer_data } = gatewaySettings;
+  const { postfix, connection } = gatewaySettings;
   event.preventDefault();
 
-  Stripe.card.createToken({
-    number: document.querySelector(`#card-number_${postfix}`).value,
-    cvc: document.querySelector(`#cvv_${postfix}`).value,
-    exp_month: document.querySelector(`#expiration-date_${postfix}`).value.split('/')[0],
-    exp_year: document.querySelector(`#expiration-date_${postfix}`).value.split('/')[1],
-    name: document.querySelector(`#cardholder-name_${postfix}`).value,
-    address_city: customer_data ? customer_data.city : null,
-    address_country: customer_data ? customer_data.country : null,
-    address_line1: customer_data ? customer_data.address : null,
-    address_zip: customer_data ? customer_data.zip_code : null
-  }, function(status, response) {
-    if (response.error) {
-      let message = response.error.message;
+  stripe.createSource(card,{ usage: 'reusable' }).then(function(result) {
+    if (result.error) {
+      let message = result.error.message;
       if (message === "Missing required param: card[exp_year].") {
         message = 'Could not find payment information';
       }
@@ -140,9 +139,8 @@ function onSubmit(event) {
       }
     } else {
       if (gatewaySettings.onTokenize && typeof(gatewaySettings.onTokenize) === 'function') {
-        gatewaySettings.onTokenize(response.id, response.card.last4, document.querySelector(`#cardholder-name_${postfix}`).value);
+        gatewaySettings.onTokenize(result.source.id, result.source.card.last4);
       }
-
       hideForm();
     }
   });
