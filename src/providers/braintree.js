@@ -68,7 +68,6 @@ function _drawForm() {
 
             ${submit_button}
           </form>
-          <div class="multiple_card_tokenization__loader">Loading</div>
         <div>
       </div>
     </div>
