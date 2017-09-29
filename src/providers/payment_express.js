@@ -10,7 +10,7 @@ function _drawForm() {
 
   div.innerHTML = `
     <div class="multiple_card_tokenization__modal_overlay multiple_card_tokenization__modal_overlay__pcibooking" style="display: none;" id="modal_${postfix}">
-      <div class="multiple_card_tokenization__modal_window">
+      <div class="multiple_card_tokenization__modal_window multiple_card_tokenization__modal_window__payment_express">
         <div class="multiple_card_tokenization__demo-frame">
         <div>
       </div>
@@ -49,10 +49,13 @@ function _initializeScripts() {
 }
 
 function showForm () {
-  const { postfix, showSubmitButton } = gatewaySettings;
+  const { postfix } = gatewaySettings;
+  const tokenize = this.tokenize;
+  let showSubmitButton = gatewaySettings.showSubmitButton === undefined ? true : false;
   let modal_inner = modal.getElementsByClassName('multiple_card_tokenization__demo-frame')[0];
-  let closeBTN;
+  let closeBTN, submitBTN;
   let close_button = showSubmitButton === false ? '' : `<button id="close-form-${postfix}" class="multiple_card_tokenization__close-button"></button>`;
+  let submit_button = showSubmitButton === false ? '' : `<div class="multiple_card_tokenization__button-container"><input type="submit" class="multiple_card_tokenization__button button--small button--green" value="Save Card Details" id="submit_${postfix}"/></div>`;
 
   modal_inner.innerHTML = `
     ${close_button}
@@ -61,12 +64,15 @@ function showForm () {
       frameborder="0"
       border="0"
       id="pcibooking_frame"
-      src="${DOMAIN}/api/public/v1/credit_card_form"></iframe>`;
+      src="${DOMAIN}/api/public/v1/credit_card_form"></iframe>
+    ${submit_button}`;
 
   modal.style.display = 'block';
   if (showSubmitButton) {
     closeBTN = document.querySelector(`#close-form-${postfix}`);
     closeBTN.addEventListener('click', hideForm.bind(this), false);
+    submitBTN = document.querySelector(`#submit_${postfix}`);
+    submitBTN.addEventListener('click', function(event) {event.preventDefault(); tokenize();}, false);
   }
 }
 
