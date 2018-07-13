@@ -5,6 +5,7 @@ import omise_service from './providers/omise';
 import worldpay_service from './providers/worldpay';
 import pcibooking_service from './providers/pcibooking';
 import payment_express_service from './providers/payment_express';
+import valitor_service from './providers/valitor';
 
 const SERVICES = {
   braintree_service,
@@ -13,7 +14,8 @@ const SERVICES = {
   omise_service,
   worldpay_service,
   pcibooking_service,
-  payment_express_service
+  payment_express_service,
+  valitor_service
 }
 
 export function init(service, settings) {
