@@ -33,7 +33,7 @@ function _drawForm() {
 
   let body = document.getElementsByTagName('body').item(0);
   let div  = target ? document.getElementById(target) : document.createElement('div');
-  let close_button = showSubmitButton === false ? '' : `<button id="close-form-${postfix}" class="multiple_card_tokenization__close-button"></button>`;
+  let close_button = showSubmitButton === false ? '' : `<a id="close-form-${postfix}" class="multiple_card_tokenization__close-button"></a>`;
   let submit_button = showSubmitButton === false ? '' : `<div class="multiple_card_tokenization__button-container"><input type="submit" class="multiple_card_tokenization__button button--small button--green" value="Save Card Details" id="submit_${postfix}"/></div>`;
 
   div.innerHTML = `
@@ -107,6 +107,7 @@ function _initializeScripts() {
   closeBTN = showSubmitButton === false ? null : document.querySelector(`#close-form-${postfix}`);
 
   braintree.client.create({ authorization: token }, _afterClientCreate.bind(this));
+  closeBTN.addEventListener('click', hideForm.bind(this), false);
 }
 
 function _afterClientCreate(clientErr, clientInstance) {
