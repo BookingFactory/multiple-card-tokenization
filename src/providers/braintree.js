@@ -107,7 +107,9 @@ function _initializeScripts() {
   closeBTN = showSubmitButton === false ? null : document.querySelector(`#close-form-${postfix}`);
 
   braintree.client.create({ authorization: token }, _afterClientCreate.bind(this));
-  closeBTN.addEventListener('click', hideForm.bind(this), false);
+  if (closeBTN) {
+    closeBTN.addEventListener('click', hideForm.bind(this), false);
+  }
 }
 
 function _afterClientCreate(clientErr, clientInstance) {
