@@ -26,7 +26,7 @@ function windowEventHandler(event) {
     if (event.data == 'valid') {
       document.getElementById('pcibooking_frame').contentWindow.postMessage('submit', "https://service.pcibooking.net");
     } else {
-      gatewaySettings.onError('Payment information is invalid, please check detaild and try again.');
+      gatewaySettings.onError('Payment information is invalid, please check details and try again.');
     }
   }
   // Make sure to check for event.origin here
