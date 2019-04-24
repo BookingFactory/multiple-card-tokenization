@@ -62,7 +62,7 @@ function _drawForm() {
                 <input type="text" id="cardholder-name_${postfix}" class="multiple_card_tokenization__hosted-field" placeholder="CARDHOLDER NAME" />
               </div>
               <div class="multiple_card_tokenization__field-container">
-                <label class="multiple_card_tokenization__hosted-fields--label">Card Data and Postal Code</label>
+                <label class="multiple_card_tokenization__hosted-fields--label">Card Data</label>
                 <div id="card-element"></div>
                 <div id="card-errors" role="alert"></div>
               </div>
@@ -110,7 +110,11 @@ function _initializeScripts() {
     }
   };
 
-  card = elements.create('card', {style: style});
+  var cardSettings = {
+    hidePostalCode: true
+  };
+
+  card = elements.create('card', {style: style, card: cardSettings});
   card.mount('#card-element');
   card.addEventListener('change', function(event) {
     var displayError = document.getElementById('card-errors');
