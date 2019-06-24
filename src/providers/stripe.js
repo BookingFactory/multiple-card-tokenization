@@ -114,7 +114,7 @@ function _initializeScripts() {
     hidePostalCode: true
   };
 
-  card = elements.create('card', {style: style, card: cardSettings});
+  card = elements.create('card', {style: style, card: cardSettings, hidePostalCode: true});
   card.mount('#card-element');
   card.addEventListener('change', function(event) {
     var displayError = document.getElementById('card-errors');
