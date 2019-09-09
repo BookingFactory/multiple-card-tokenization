@@ -7,6 +7,8 @@ import pcibooking_service from './providers/pcibooking';
 import payment_express_service from './providers/payment_express';
 import valitor_service from './providers/valitor';
 
+import stripePaymentGateways from './payment_gateways/stripe';
+
 const SERVICES = {
   braintree_service,
   pci_proxy_service,
@@ -16,7 +18,11 @@ const SERVICES = {
   pcibooking_service,
   payment_express_service,
   valitor_service
-}
+};
+
+const PAYMENT_GATEWAYS = {
+  stripe: stripePaymentGateways
+};
 
 export function init(service, settings) {
   try {
@@ -24,6 +30,24 @@ export function init(service, settings) {
   } catch (error) {
     console.log(error);
     console.log('Unsupported payment service');
+
+    return false;
+  }
+}
+
+export function handleCardPayment(service, settings) {
+  try {
+    const paymentGateway = PAYMENT_GATEWAYS[service];
+
+    if (!paymentGateway) {
+      throw new Error("Unsupported payment gateway");
+    }
+
+    return paymentGateway.handleCardPayment(settings);
+  } catch (error) {
+    console.error(error);
+    console.error('Unsupported payment service');
+
     return false;
   }
 }

@@ -6,3 +6,4 @@ npm-debug.log
 index.html
 aws-credentials.json
 .vscode
+.idea

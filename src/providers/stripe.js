@@ -23,7 +23,8 @@ const keyCodes = {
   55: '7',
   56: '8',
   57: '9'
-}
+};
+const DOMAIN = "https://app.thebookingfactory.com";
 
 function _injectLibraryScripts() {
   libraryPaths.forEach((path) => {
@@ -127,25 +128,55 @@ function _initializeScripts() {
 }
 
 function onSubmit(event) {
-  const { postfix, connection } = gatewaySettings;
   event.preventDefault();
 
-  stripe.createSource(card,{ usage: 'reusable' }).then(function(result) {
+  stripe.createPaymentMethod('card', card).then(function(result) {
     if (result.error) {
+      // TODO: need to trigger this case
+      debugger;
+
       let message = result.error.message;
       if (message === "Missing required param: card[exp_year].") {
         message = 'Could not find payment information';
       }
+
       if (gatewaySettings.onError && typeof(gatewaySettings.onError) === 'function') {
         gatewaySettings.onError(message);
       } else {
         alert(message);
       }
     } else {
-      if (gatewaySettings.onTokenize && typeof(gatewaySettings.onTokenize) === 'function') {
-        gatewaySettings.onTokenize(result.source.id, result.source.card.last4);
-      }
-      hideForm();
+      fetch(`${DOMAIN}/api/public/v2/prepare_payment?token=${gatewaySettings.bookingToken}`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          payment_method_id: result.paymentMethod.id
+        })
+      })
+        .then((response) => {
+          if (response.status !== 200) {
+            console.error(response);
+            alert('Something went wrong');
+            throw new Error('Something went wrong');
+          }
+
+          return response.json();
+        })
+        .then((response) => {
+          if (gatewaySettings.onTokenize && typeof(gatewaySettings.onTokenize) === 'function') {
+            gatewaySettings.onTokenize(
+              result.paymentMethod.id,
+              result.paymentMethod.card.last4,
+              {
+                clientSecret: response.client_secret
+              }
+            );
+          }
+
+          hideForm();
+        });
     }
   });
 }
@@ -214,7 +245,7 @@ export default class {
     loadingInterval = setInterval(_checkLoading.bind(this), 100);
   }
 
-  showForm = showForm
-  hideForm = hideForm
-  tokenize = tokenize
+  showForm = showForm;
+  hideForm = hideForm;
+  tokenize = tokenize;
 }
