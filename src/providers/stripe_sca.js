@@ -1,29 +1,15 @@
-let libraryPaths = [
+const libraryPaths = [
   'https://js.stripe.com/v3/'
 ];
-let form, submit, closeBTN, numberField, expDateField;
-let hostedFieldsInstance = null;
+const DOMAIN = "https://app.thebookingfactory.com";
+
+let form, submit, closeBTN;
 let loadingInterval = null;
 let gatewaySettings = {};
-let isReady = false;
 let modal;
 let stripe;
 let elements;
 let card;
-const acceptedKeys = [48,49,50,51,52,53,54,55,56,57,8,9,13,37,38,39,40];
-const controlKeys = [8,9,13,37,38,39,40];
-const keyCodes = {
-  48: '0',
-  49: '1',
-  50: '2',
-  51: '3',
-  52: '4',
-  53: '5',
-  54: '6',
-  55: '7',
-  56: '8',
-  57: '9'
-}
 
 function _injectLibraryScripts() {
   libraryPaths.forEach((path) => {
@@ -82,22 +68,25 @@ function _drawForm() {
 
 function _checkLoading() {
   if (window.Stripe) {
-    isReady = true;
     _initializeScripts();
     clearInterval(loadingInterval);
   }
 }
 
 function _initializeScripts() {
+  console.log(gatewaySettings);
+  debugger;
   const { postfix, connection, showSubmitButton } = gatewaySettings;
   const { token } = connection;
 
   form = document.querySelector(`#stripe_card_form_${postfix}`);
+
   if (gatewaySettings.showSubmitButton === undefined || !gatewaySettings.showSubmitButton === false) {
     submit = document.querySelector(`#submit_${postfix}`);
     closeBTN = document.querySelector(`#close-form-${postfix}`);
     closeBTN.addEventListener('click', hideForm.bind(this), false);
   }
+
   form.addEventListener('submit', onSubmit.bind(this), false);
   stripe = Stripe(token);
   elements = stripe.elements();
@@ -127,25 +116,55 @@ function _initializeScripts() {
 }
 
 function onSubmit(event) {
-  const { postfix, connection } = gatewaySettings;
   event.preventDefault();
 
-  stripe.createSource(card,{ usage: 'reusable' }).then(function(result) {
+  stripe.createPaymentMethod('card', card).then(function(result) {
     if (result.error) {
+      // TODO: need to trigger this case
+      debugger;
+
       let message = result.error.message;
       if (message === "Missing required param: card[exp_year].") {
         message = 'Could not find payment information';
       }
+
       if (gatewaySettings.onError && typeof(gatewaySettings.onError) === 'function') {
         gatewaySettings.onError(message);
       } else {
         alert(message);
       }
     } else {
-      if (gatewaySettings.onTokenize && typeof(gatewaySettings.onTokenize) === 'function') {
-        gatewaySettings.onTokenize(result.source.id, result.source.card.last4);
-      }
-      hideForm();
+      fetch(`${DOMAIN}/api/public/v2/prepare_payment?token=${gatewaySettings.bookingToken}`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          payment_method_id: result.paymentMethod.id
+        })
+      })
+        .then((response) => {
+          if (response.status !== 200) {
+            console.error(response);
+            alert('Something went wrong');
+            throw new Error('Something went wrong');
+          }
+
+          return response.json();
+        })
+        .then((response) => {
+          if (gatewaySettings.onTokenize && typeof(gatewaySettings.onTokenize) === 'function') {
+            gatewaySettings.onTokenize(
+              result.paymentMethod.id,
+              result.paymentMethod.card.last4,
+              {
+                clientSecret: response.client_secret
+              }
+            );
+          }
+
+          hideForm();
+        });
     }
   });
 }
@@ -161,48 +180,7 @@ function hideForm () {
   }
 }
 
-function tokenize (customer_information) {
-  gatewaySettings.customer_data = customer_information;
-  onSubmit({preventDefault: function() {}});
-}
-
-function manageSlashAtExpirationDate (event) {
-  if (acceptedKeys.indexOf(event.keyCode) == -1) {
-    event.preventDefault();
-  } else if (controlKeys.indexOf(event.keyCode) != -1) {
-  } else {
-    if (event.target.value.length == 1) {
-      event.target.value = event.target.value + keyCodes[event.keyCode] + '/';
-      event.preventDefault();
-    }
-  }
-}
-
-function manageCardNumber (event) {
-  const amex_steps = [4,10];
-  const steps = [4,8,12];
-  const amex_length = 15;
-  const length = 16;
-  if (acceptedKeys.indexOf(event.keyCode) == -1) {
-    event.preventDefault();
-  } else if (controlKeys.indexOf(event.keyCode) != -1) {
-  } else {
-    let val = event.target.value.replace(/\s/ig, '');
-    let used_length = event.target.value[0] == '3' ? amex_length : length;
-    let used_steps = event.target.value[0] == '3' ? amex_steps : steps;
-
-    if (used_steps.indexOf(val.length + 1) != -1) {
-      event.target.value = event.target.value + keyCodes[event.keyCode] + ' ';
-      event.preventDefault();
-    }
-
-    if (used_length == val.length) {
-      event.preventDefault();
-    }
-  }
-}
-
-export default class {
+export default class StripeSca  {
   constructor(settings) {
     gatewaySettings = {
       ...settings,
@@ -214,7 +192,6 @@ export default class {
     loadingInterval = setInterval(_checkLoading.bind(this), 100);
   }
 
-  showForm = showForm
-  hideForm = hideForm
-  tokenize = tokenize
+  showForm = showForm;
+  hideForm = hideForm;
 }

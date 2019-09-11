@@ -1,18 +1,20 @@
 import braintree_service from './providers/braintree';
 import pci_proxy_service from './providers/pci_proxy';
 import stripe_service from './providers/stripe';
+import stripe_sca_service from './providers/stripe_sca';
 import omise_service from './providers/omise';
 import worldpay_service from './providers/worldpay';
 import pcibooking_service from './providers/pcibooking';
 import payment_express_service from './providers/payment_express';
 import valitor_service from './providers/valitor';
 
-import stripePaymentGateways from './payment_gateways/stripe';
+import stripePaymentGateways from './payment_gateways/stripe_sca';
 
 const SERVICES = {
   braintree_service,
   pci_proxy_service,
   stripe_service,
+  stripe_sca_service,
   omise_service,
   worldpay_service,
   pcibooking_service,
@@ -21,7 +23,7 @@ const SERVICES = {
 };
 
 const PAYMENT_GATEWAYS = {
-  stripe: stripePaymentGateways
+  stripe_sca: stripePaymentGateways
 };
 
 export function init(service, settings) {
