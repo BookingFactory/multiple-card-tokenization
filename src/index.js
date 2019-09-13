@@ -53,3 +53,20 @@ export function handleCardPayment(service, settings) {
     return false;
   }
 }
+
+export function handleCardSetup(service, settings) {
+  try {
+    const paymentGateway = PAYMENT_GATEWAYS[service];
+
+    if (!paymentGateway) {
+      throw new Error("Unsupported payment gateway");
+    }
+
+    return paymentGateway.handleCardSetup(settings);
+  } catch (error) {
+    console.error(error);
+    console.error('Unsupported payment service');
+
+    return false;
+  }
+}

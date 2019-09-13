@@ -1,7 +1,7 @@
 const libraryPaths = [
   'https://js.stripe.com/v3/'
 ];
-const DOMAIN = "https://app.thebookingfactory.com";
+const DEFAULT_DOMAIN = "https://app.thebookingfactory.com";
 
 let form, submit, closeBTN;
 let loadingInterval = null;
@@ -74,14 +74,12 @@ function _checkLoading() {
 }
 
 function _initializeScripts() {
-  console.log(gatewaySettings);
-  debugger;
   const { postfix, connection, showSubmitButton } = gatewaySettings;
   const { token } = connection;
 
   form = document.querySelector(`#stripe_card_form_${postfix}`);
 
-  if (gatewaySettings.showSubmitButton === undefined || !gatewaySettings.showSubmitButton === false) {
+  if (showSubmitButton === undefined || !showSubmitButton === false) {
     submit = document.querySelector(`#submit_${postfix}`);
     closeBTN = document.querySelector(`#close-form-${postfix}`);
     closeBTN.addEventListener('click', hideForm.bind(this), false);
@@ -115,6 +113,42 @@ function _initializeScripts() {
   });
 }
 
+function getIntentEndpoint() {
+  if (window.location.origin === DEFAULT_DOMAIN) {
+    // expect to find hotel slug as first path part - /:hotel_slug/:lang/book
+    const hotelSlug = window.location.pathname.split('/')[1];
+
+    return `${DEFAULT_DOMAIN}/${hotelSlug}/prepare_intent`;
+  }
+
+  return `${window.location.origin}/prepare_intent`;
+}
+
+function preparePaymentIntentForBooking(token, paymentMethodId) {
+  return fetch(`${getIntentEndpoint()}?token=${token}`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({
+      payment_method_id: paymentMethodId
+    })
+  });
+}
+
+function prepareIntent(amount, paymentMethodId) {
+  return fetch(getIntentEndpoint(), {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({
+      amount: amount,
+      payment_method_id: paymentMethodId
+    })
+  });
+}
+
 function onSubmit(event) {
   event.preventDefault();
 
@@ -134,15 +168,11 @@ function onSubmit(event) {
         alert(message);
       }
     } else {
-      fetch(`${DOMAIN}/api/public/v2/prepare_payment?token=${gatewaySettings.bookingToken}`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          payment_method_id: result.paymentMethod.id
-        })
-      })
+      const action = gatewaySettings.bookingToken
+        ? preparePaymentIntentForBooking(gatewaySettings.bookingToken, result.paymentMethod.id)
+        : prepareIntent(gatewaySettings.customer_data.amount, result.paymentMethod.id);
+
+        action
         .then((response) => {
           if (response.status !== 200) {
             console.error(response);
@@ -157,6 +187,7 @@ function onSubmit(event) {
             gatewaySettings.onTokenize(
               result.paymentMethod.id,
               result.paymentMethod.card.last4,
+              undefined, // TODO: put cardholder name here
               {
                 clientSecret: response.client_secret
               }
@@ -180,6 +211,12 @@ function hideForm () {
   }
 }
 
+// TODO: need to know initial payment here
+function tokenize (customerInformation) {
+  gatewaySettings.customer_data = customerInformation;
+  onSubmit({preventDefault: function() {}});
+}
+
 export default class StripeSca  {
   constructor(settings) {
     gatewaySettings = {
@@ -194,4 +231,5 @@ export default class StripeSca  {
 
   showForm = showForm;
   hideForm = hideForm;
+  tokenize = tokenize;
 }
