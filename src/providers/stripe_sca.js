@@ -1,7 +1,7 @@
 const libraryPaths = [
   'https://js.stripe.com/v3/'
 ];
-const DEFAULT_DOMAIN = "https://app.thebookingfactory.com";
+const DOMAIN = "https://app.thebookingfactory.com";
 
 let form, submit, closeBTN;
 let loadingInterval = null;
@@ -113,22 +113,11 @@ function _initializeScripts() {
   });
 }
 
-function getIntentEndpoint() {
-  if (window.location.origin === DEFAULT_DOMAIN) {
-    // expect to find hotel slug as first path part - /:hotel_slug/:lang/book
-    const hotelSlug = window.location.pathname.split('/')[1];
-
-    return `${DEFAULT_DOMAIN}/${hotelSlug}/prepare_intent`;
-  }
-
-  return `${window.location.origin}/prepare_intent`;
-}
-
-function preparePaymentIntentForBooking(token, paymentMethodId) {
-  return fetch(`${getIntentEndpoint()}?token=${token}`, {
+function preparePaymentIntentForBooking(bookingToken, paymentMethodId) {
+  return fetch(`${DOMAIN}/api/public/v1/prepare_online_payment/stripe_sca?token=${bookingToken}`, {
     method: 'POST',
     headers: {
-      'Content-Type': 'application/json'
+      'Content-Type': 'application/json',
     },
     body: JSON.stringify({
       payment_method_id: paymentMethodId
@@ -136,11 +125,12 @@ function preparePaymentIntentForBooking(token, paymentMethodId) {
   });
 }
 
-function prepareIntent(amount, paymentMethodId) {
-  return fetch(getIntentEndpoint(), {
+function prepareIntent(amount, apiKey, paymentMethodId) {
+  return fetch(`${DOMAIN}/api/public/v1/prepare_online_payment/stripe_sca`, {
     method: 'POST',
     headers: {
-      'Content-Type': 'application/json'
+      'Content-Type': 'application/json',
+      'Token': apiKey,
     },
     body: JSON.stringify({
       amount: amount,
@@ -154,9 +144,6 @@ function onSubmit(event) {
 
   stripe.createPaymentMethod('card', card).then(function(result) {
     if (result.error) {
-      // TODO: need to trigger this case
-      debugger;
-
       let message = result.error.message;
       if (message === "Missing required param: card[exp_year].") {
         message = 'Could not find payment information';
@@ -170,7 +157,7 @@ function onSubmit(event) {
     } else {
       const action = gatewaySettings.bookingToken
         ? preparePaymentIntentForBooking(gatewaySettings.bookingToken, result.paymentMethod.id)
-        : prepareIntent(gatewaySettings.customer_data.amount, result.paymentMethod.id);
+        : prepareIntent(gatewaySettings.customer_data.amount, gatewaySettings.apiKey, result.paymentMethod.id);
 
         action
         .then((response) => {
@@ -184,10 +171,11 @@ function onSubmit(event) {
         })
         .then((response) => {
           if (gatewaySettings.onTokenize && typeof(gatewaySettings.onTokenize) === 'function') {
+            // TODO: do we need data here for online payment gateways?
             gatewaySettings.onTokenize(
-              result.paymentMethod.id,
-              result.paymentMethod.card.last4,
-              undefined, // TODO: put cardholder name here
+              '',
+              '',
+              '',
               {
                 clientSecret: response.client_secret
               }

@@ -37,26 +37,26 @@ export function init(service, settings) {
   }
 }
 
-export function handleCardPayment(service, settings) {
+export function handleOnlinePayment(gateway, payload) {
   try {
-    const paymentGateway = PAYMENT_GATEWAYS[service];
+    const paymentGateway = PAYMENT_GATEWAYS[gateway];
 
     if (!paymentGateway) {
       throw new Error("Unsupported payment gateway");
     }
 
-    return paymentGateway.handleCardPayment(settings);
+    return paymentGateway.handleOnlinePayment(payload);
   } catch (error) {
     console.error(error);
-    console.error('Unsupported payment service');
+    console.error('Unsupported payment gateway');
 
     return false;
   }
 }
 
-export function handleCardSetup(service, settings) {
+export function handleCardSetup(gateway, settings) {
   try {
-    const paymentGateway = PAYMENT_GATEWAYS[service];
+    const paymentGateway = PAYMENT_GATEWAYS[gateway];
 
     if (!paymentGateway) {
       throw new Error("Unsupported payment gateway");
@@ -65,7 +65,7 @@ export function handleCardSetup(service, settings) {
     return paymentGateway.handleCardSetup(settings);
   } catch (error) {
     console.error(error);
-    console.error('Unsupported payment service');
+    console.error('Unsupported payment gateway');
 
     return false;
   }
