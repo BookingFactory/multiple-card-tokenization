@@ -8,7 +8,7 @@ import pcibooking_service from './providers/pcibooking';
 import payment_express_service from './providers/payment_express';
 import valitor_service from './providers/valitor';
 
-import stripePaymentGateways from './payment_gateways/stripe_sca';
+import stripeScaGateway from './online_providers/stripe_sca';
 
 const SERVICES = {
   braintree_service,
@@ -22,8 +22,8 @@ const SERVICES = {
   valitor_service
 };
 
-const PAYMENT_GATEWAYS = {
-  stripe_sca: stripePaymentGateways
+const ONLINE_GATEWAYS = {
+  stripe_sca: stripeScaGateway
 };
 
 export function init(service, settings) {
@@ -38,35 +38,21 @@ export function init(service, settings) {
 }
 
 export function handleOnlinePayment(gateway, payload) {
-  try {
-    const paymentGateway = PAYMENT_GATEWAYS[gateway];
+  const paymentGateway = ONLINE_GATEWAYS[gateway];
 
-    if (!paymentGateway) {
-      throw new Error("Unsupported payment gateway");
-    }
-
-    return paymentGateway.handleOnlinePayment(payload);
-  } catch (error) {
-    console.error(error);
-    console.error('Unsupported payment gateway');
-
-    return false;
+  if (!paymentGateway) {
+    return Promise.reject(new Error("Unsupported payment gateway"));
   }
+
+  return paymentGateway.handleOnlinePayment(payload);
 }
 
 export function handleCardSetup(gateway, settings) {
-  try {
-    const paymentGateway = PAYMENT_GATEWAYS[gateway];
+  const paymentGateway = ONLINE_GATEWAYS[gateway];
 
-    if (!paymentGateway) {
-      throw new Error("Unsupported payment gateway");
-    }
-
-    return paymentGateway.handleCardSetup(settings);
-  } catch (error) {
-    console.error(error);
-    console.error('Unsupported payment gateway');
-
-    return false;
+  if (!paymentGateway) {
+    return Promise.reject(new Error("Unsupported payment gateway"));
   }
+
+  return paymentGateway.handleCardSetup(settings);
 }

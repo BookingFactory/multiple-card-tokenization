@@ -173,9 +173,9 @@ function onSubmit(event) {
           if (gatewaySettings.onTokenize && typeof(gatewaySettings.onTokenize) === 'function') {
             // TODO: do we need data here for online payment gateways?
             gatewaySettings.onTokenize(
-              '',
-              '',
-              '',
+              result.paymentMethod.id,
+              result.paymentMethod.card.last4,
+              undefined, // TODO: put cardholder name here
               {
                 clientSecret: response.client_secret
               }
@@ -199,7 +199,6 @@ function hideForm () {
   }
 }
 
-// TODO: need to know initial payment here
 function tokenize (customerInformation) {
   gatewaySettings.customer_data = customerInformation;
   onSubmit({preventDefault: function() {}});
