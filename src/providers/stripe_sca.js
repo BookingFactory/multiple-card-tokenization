@@ -97,12 +97,12 @@ function _initializeScripts() {
     }
   };
 
-  var cardSettings = {
-    hidePostalCode: true
-  };
-
-  card = elements.create('card', {style: style, card: cardSettings});
+  card = elements.create('card', {
+    style: style,
+    hidePostalCode: true,
+  });
   card.mount('#card-element');
+
   card.addEventListener('change', function(event) {
     var displayError = document.getElementById('card-errors');
     if (event.error) {
@@ -140,9 +140,27 @@ function prepareIntent(amount, apiKey, paymentMethodId) {
 }
 
 function onSubmit(event) {
+  const { postfix } = gatewaySettings;
+  const cardholderName = document.querySelector(`#cardholder-name_${postfix}`).value;
+
   event.preventDefault();
 
-  stripe.createPaymentMethod('card', card).then(function(result) {
+  const billingDetails = {
+    "billing_details": {
+      "address": {
+        "city": gatewaySettings.customer_data.city ? gatewaySettings.customer_data.city : null,
+        "country": gatewaySettings.customer_data.country_code ? gatewaySettings.customer_data.country_code : null,
+        "line1": gatewaySettings.customer_data.address_1 ? gatewaySettings.customer_data.address_1 : null,
+        "line2": gatewaySettings.customer_data.address_2 ? gatewaySettings.customer_data.address_2 : null,
+        "postal_code": gatewaySettings.customer_data.postal_code ? gatewaySettings.customer_data.postal_code : null,
+      },
+      "email": gatewaySettings.customer_data.email ? gatewaySettings.customer_data.email : null,
+      "name": cardholderName,
+      "phone": gatewaySettings.customer_data.phone_number ? gatewaySettings.customer_data.phone_number : null
+    },
+  };
+
+  stripe.createPaymentMethod('card', card, billingDetails).then(function(result) {
     if (result.error) {
       let message = result.error.message;
       if (message === "Missing required param: card[exp_year].") {

@@ -37,22 +37,12 @@ export function init(service, settings) {
   }
 }
 
-export function handleOnlinePayment(gateway, payload) {
+export function handleOnlinePayment(gateway, initial_amount, payload) {
   const paymentGateway = ONLINE_GATEWAYS[gateway];
 
   if (!paymentGateway) {
     return Promise.reject(new Error("Unsupported payment gateway"));
   }
 
-  return paymentGateway.handleOnlinePayment(payload);
-}
-
-export function handleCardSetup(gateway, settings) {
-  const paymentGateway = ONLINE_GATEWAYS[gateway];
-
-  if (!paymentGateway) {
-    return Promise.reject(new Error("Unsupported payment gateway"));
-  }
-
-  return paymentGateway.handleCardSetup(settings);
+  return paymentGateway.handleOnlinePayment(initial_amount, payload);
 }
