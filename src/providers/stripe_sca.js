@@ -120,7 +120,9 @@ function preparePaymentIntentForBooking(bookingToken, paymentMethodId) {
       'Content-Type': 'application/json',
     },
     body: JSON.stringify({
-      payment_method_id: paymentMethodId
+      gateway_payload: {
+        payment_method_id: paymentMethodId
+      }
     })
   });
 }
@@ -134,7 +136,9 @@ function prepareIntent(amount, apiKey, paymentMethodId) {
     },
     body: JSON.stringify({
       amount: amount,
-      payment_method_id: paymentMethodId
+      gateway_payload: {
+        payment_method_id: paymentMethodId
+      }
     })
   });
 }
@@ -175,33 +179,35 @@ function onSubmit(event) {
     } else {
       const action = gatewaySettings.bookingToken
         ? preparePaymentIntentForBooking(gatewaySettings.bookingToken, result.paymentMethod.id)
-        : prepareIntent(gatewaySettings.customer_data.amount, gatewaySettings.apiKey, result.paymentMethod.id);
+        : prepareIntent(gatewaySettings.amount, gatewaySettings.apiKey, result.paymentMethod.id);
 
         action
-        .then((response) => {
-          if (response.status !== 200) {
-            console.error(response);
-            alert('Something went wrong');
-            throw new Error('Something went wrong');
-          }
+          .then((response) => {
+            if (response.status !== 200) {
+              console.error(response);
+              throw new Error('Something went wrong');
+            }
 
-          return response.json();
-        })
-        .then((response) => {
-          if (gatewaySettings.onTokenize && typeof(gatewaySettings.onTokenize) === 'function') {
-            // TODO: do we need data here for online payment gateways?
-            gatewaySettings.onTokenize(
-              result.paymentMethod.id,
-              result.paymentMethod.card.last4,
-              undefined, // TODO: put cardholder name here
-              {
-                clientSecret: response.client_secret
-              }
-            );
-          }
+            return response.json();
+          })
+          .then((response) => {
+            if (gatewaySettings.onTokenize && typeof(gatewaySettings.onTokenize) === 'function') {
+              gatewaySettings.onTokenize(
+                result.paymentMethod.id,
+                result.paymentMethod.card.last4,
+                cardholderName,
+                {
+                  clientSecret: response.payload.client_secret
+                }
+              );
+            }
 
-          hideForm();
-        });
+            hideForm();
+          })
+          .catch((error) => {
+            console.error(error);
+
+          });
     }
   });
 }
