@@ -1,7 +1,8 @@
 const libraryPaths = [
   'https://js.stripe.com/v3/'
 ];
-const DOMAIN = "https://app.thebookingfactory.com";
+import { API_ENDPOINT } from '../config';
+const METHOD = '/v1/prepare_online_payment/stripe_sca';
 
 let form, submit, closeBTN;
 let loadingInterval = null;
@@ -114,7 +115,7 @@ function _initializeScripts() {
 }
 
 function preparePaymentIntentForBooking(bookingToken, paymentMethodId) {
-  return fetch(`${DOMAIN}/api/public/v1/prepare_online_payment/stripe_sca?token=${bookingToken}`, {
+  return fetch(`${API_ENDPOINT}${METHOD}?token=${bookingToken}`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -128,7 +129,7 @@ function preparePaymentIntentForBooking(bookingToken, paymentMethodId) {
 }
 
 function prepareIntent(amount, apiKey, paymentMethodId) {
-  return fetch(`${DOMAIN}/api/public/v1/prepare_online_payment/stripe_sca`, {
+  return fetch(`${API_ENDPOINT}${METHOD}`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -206,7 +207,6 @@ function onSubmit(event) {
           })
           .catch((error) => {
             console.error(error);
-
           });
     }
   });
