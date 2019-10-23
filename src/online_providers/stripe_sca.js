@@ -1,8 +1,7 @@
 export default {
-  handleOnlinePayment: ({ settings, payment }) => {
+  handleOnlinePayment: ({ settings, payment, onlyTokenizeCard}) => {
     const token = settings.token;
     const clientSecret = payment.clientSecret;
-    const onlyTokenizeCard = payment.onlyTokenizeCard;
 
     const stripe = window.Stripe(token);
     let paymentPromise = Promise.resolve();
