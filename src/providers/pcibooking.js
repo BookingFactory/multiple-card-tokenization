@@ -37,6 +37,14 @@ function windowEventHandler(event) {
       gatewaySettings.onTokenize(token, 'is stored at PCIBooking');
       hideForm();
     }
+
+    if (status !== true) {
+      if (gatewaySettings.onError && typeof(gatewaySettings.onError) === 'function') {
+        gatewaySettings.onError(message);
+      } else {
+        alert(message);
+      }
+    }
   }
 }
 

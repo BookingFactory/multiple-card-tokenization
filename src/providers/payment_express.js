@@ -32,10 +32,19 @@ function windowEventHandler(event) {
   // Make sure to check for event.origin here
   if (event.origin === DOMAIN && event.data) {
     var status = event.data.success;
+    var message = event.data.message;
     var token = event.data.token;
     if (gatewaySettings.onTokenize && typeof(gatewaySettings.onTokenize) === 'function' && status === true) {
       gatewaySettings.onTokenize(token, 'is stored at PCIBooking');
       hideForm();
+    }
+
+    if (status !== true) {
+      if (gatewaySettings.onError && typeof(gatewaySettings.onError) === 'function') {
+        gatewaySettings.onError(message);
+      } else {
+        alert(message);
+      }
     }
   }
 }

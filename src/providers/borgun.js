@@ -1,6 +1,6 @@
 let gatewaySettings = {};
 let modal;
-const DOMAIN = "https://app.thebookingfactory.com";
+const DOMAIN = "https://localhost";
 
 function _drawForm() {
   const { postfix, target } = gatewaySettings;
@@ -10,7 +10,7 @@ function _drawForm() {
 
   div.innerHTML = `
     <div class="multiple_card_tokenization__modal_overlay multiple_card_tokenization__modal_overlay__pcibooking" style="display: none;" id="modal_${postfix}">
-      <div class="multiple_card_tokenization__modal_window multiple_card_tokenization__modal_window__valitor">
+      <div class="multiple_card_tokenization__modal_window multiple_card_tokenization__modal_window__borgun">
         <div class="multiple_card_tokenization__demo-frame">
         <div>
       </div>
@@ -68,7 +68,6 @@ function windowEventHandler(event) {
         alert(message);
       }
     }
-
   }
 }
 
