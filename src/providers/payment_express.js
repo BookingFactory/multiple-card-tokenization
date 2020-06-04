@@ -22,20 +22,30 @@ function _drawForm() {
 }
 
 function windowEventHandler(event) {
-  if (event.origin.toLowerCase() === "https://service.pcibooking.net" || event.origin.toLowerCase() === "https://service.pcibooking.net/") {
-    if (event.data == 'valid') {
-      document.getElementById('pcibooking_frame').contentWindow.postMessage('submit', "https://service.pcibooking.net");
-    } else {
-      gatewaySettings.onError('Payment information is invalid, please check details and try again.');
-    }
+  if (event.data == 'valid' || (event.data && event.data.valid == true)) {
+    document.getElementById('pcibooking_frame').contentWindow.postMessage('submit', "*");
+    return;
   }
-  // Make sure to check for event.origin here
-  if (event.origin === DOMAIN && event.data) {
+  if (event.data == 'invalid' || (event.data && event.data.valid == false)) {
+    return gatewaySettings.onError('Payment information is invalid, please check details and try again.');
+  }
+
+  if (event.data) {
     var status = event.data.success;
     var message = event.data.message;
-    var token = event.data.token;
+    var card = event.data.card;
+    var token = card ? card.card_token : event.data.token;
+
     if (gatewaySettings.onTokenize && typeof(gatewaySettings.onTokenize) === 'function' && status === true) {
-      gatewaySettings.onTokenize(token, 'is stored at PCIBooking');
+      gatewaySettings.onTokenize(token,
+        'is stored at PCI storage',
+        card ? card.cardholder_name : window.decodeURI(event.data.cardHolderName),
+        {
+          last_4: card ? card.card_number : event.data.cardNumber,
+          card_type: card ? card.card_type : event.data.cardType,
+          expiration_month: card ? card.expiration_month : event.data.expiration.slice(0,2),
+          expiration_year: card ? card.expiration_year : event.data.expiration.slice(2,6)
+        });
       hideForm();
     }
 
@@ -86,7 +96,7 @@ function showForm () {
 }
 
 function tokenize () {
-  document.getElementById('pcibooking_frame').contentWindow.postMessage('validate', "https://service.pcibooking.net");
+  document.getElementById('pcibooking_frame').contentWindow.postMessage('validate', "*");
 }
 
 function hideForm () {
