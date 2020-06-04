@@ -3,8 +3,9 @@ var fs = require('fs');
 var mime = require('mime');
 var config = require('../aws-upload.conf.js');
 
-AWS.config.loadFromPath(config.credentials)
-
+try {
+  AWS.config.loadFromPath(config.credentials)
+} catch (e) { }
 var s3obj = new AWS.S3({params: {Bucket: config.bucketName}});
 
 fs.readdir(config.source, function(err, response) {

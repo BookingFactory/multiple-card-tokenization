@@ -10,7 +10,7 @@
     "prebuild": "rimraf dist lib",
     "build": "webpack && babel src --out-dir lib",
     "prepublish": "npm run build",
-    "deploy": "node ./scripts/deploy.js"
+    "deploy": "node ./scripts/deploy.js && node ./scripts/createInvalidation.js"
   },
   "devDependencies": {
     "aws-sdk": "^2.6.10",
