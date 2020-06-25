@@ -1,6 +1,6 @@
 let gatewaySettings = {};
 let modal;
-const DOMAIN = "https://localhost";
+const DOMAIN = "https://app.thebookingfactory.com";
 
 function _drawForm() {
   const { postfix, target } = gatewaySettings;
