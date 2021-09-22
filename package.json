@@ -9,8 +9,11 @@
     "test:watch": "npm run test -- --watch",
     "prebuild": "rimraf dist lib",
     "build": "webpack && babel src --out-dir lib",
+    "build_staging": "webpack --config ./webpack_staging.config.js && babel src --out-dir lib",
     "prepublish": "npm run build",
-    "deploy": "node ./scripts/deploy.js && node ./scripts/createInvalidation.js"
+    "deploy": "node ./scripts/deploy.js && node ./scripts/createInvalidation.js",
+    "deploy_staging": "node ./scripts/deployStaging.js && node ./scripts/createInvalidationStaging.js"
+
   },
   "devDependencies": {
     "aws-sdk": "^2.6.10",

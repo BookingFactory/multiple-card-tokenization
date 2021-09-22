@@ -13,7 +13,7 @@ var params = {
     Paths: {
       Quantity: 1,
       Items: [
-        '/multiple*',
+        '/multipleCardTokenizationStaging.min.js',
       ]
     }
   }
