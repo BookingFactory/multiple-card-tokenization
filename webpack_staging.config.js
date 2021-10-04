@@ -23,7 +23,8 @@ module.exports = {
     new webpack.optimize.OccurenceOrderPlugin(),
     new webpack.DefinePlugin({
       'process.env': {
-        'NODE_ENV': JSON.stringify('production')
+        'NODE_ENV': JSON.stringify('production'),
+        'ENV_DOMAIN': JSON.stringify('https://app.test.thebookingfactory.com')
       }
     }),
     new webpack.optimize.UglifyJsPlugin({
