@@ -7,6 +7,7 @@ import worldpay_service from './providers/worldpay';
 import pcibooking_service from './providers/pcibooking';
 import payment_express_service from './providers/payment_express';
 import valitor_service from './providers/valitor';
+import valitor_pay_service from './providers/valitor_pay';
 import borgun_service from './providers/borgun';
 
 import stripeScaGateway from './online_providers/stripe_sca';
@@ -21,6 +22,7 @@ const SERVICES = {
   pcibooking_service,
   payment_express_service,
   valitor_service,
+  valitor_pay_service,
   borgun_service
 };
 
