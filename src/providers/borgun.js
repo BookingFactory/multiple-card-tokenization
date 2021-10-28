@@ -1,6 +1,8 @@
 let gatewaySettings = {};
 let modal;
-const DOMAIN = "https://app.thebookingfactory.com";
+
+// for local testing DOMAIN = "http://localhost:3000";
+const DOMAIN = process.env.ENV_DOMAIN ? process.env.ENV_DOMAIN : "https://app.thebookingfactory.com";
 
 function _drawForm() {
   const { postfix, target } = gatewaySettings;
@@ -22,51 +24,74 @@ function _drawForm() {
 }
 
 function windowEventHandler(event) {
-  if (event.data == 'valid' || (event.data && event.data.valid == true)) {
-    document.getElementById('pcibooking_frame').contentWindow.postMessage('submit', "*");
-    return;
-  }
-  if (event.data == 'invalid' || (event.data && event.data.valid == false)) {
-    return gatewaySettings.onError('Payment information is invalid, please check details and try again.');
+  var isThreeDSecure = event && event.data && event.data.hasOwnProperty('three_d_secure_data');
+
+  if (!isThreeDSecure) {
+    if (event.data == 'valid' || (event.data && event.data.valid == true)) {
+      document.getElementById('pcibooking_frame').contentWindow.postMessage('submit', "*");
+      return;
+    }
+    if (event.data == 'invalid' || (event.data && event.data.valid == false)) {
+      return gatewaySettings.onError('Payment information is invalid, please check details and try again.');
+    }
   }
 
   if (event.data) {
     var status = event.data.success;
     var message = event.data.message;
-    var card = event.data.card;
-    var token = card ? card.card_token : event.data.token;
 
-    if (gatewaySettings.onTokenize && typeof(gatewaySettings.onTokenize) === 'function' && status === true) {
-      console.log(
-        token,
-        'is stored at PCI storage',
-        window.decodeURI(event.data.cardHolderName),
-        {
-          last_4: card ? card.card_number : event.data.cardNumber,
-          card_type: card ? card.card_type : event.data.cardType,
-          expiration_month: card ? card.expiration_month : event.data.expiration.slice(0,2),
-          expiration_year: card ? card.expiration_year : event.data.expiration.slice(2,6)
+    if (isThreeDSecure) {
+      // handle borgun 3DS event
+      const threeDSecureData = event.data.three_d_secure_data;
+      
+      if (status === true) {
+        if (gatewaySettings.onThreeDSecureSuccess && typeof(gatewaySettings.onThreeDSecureSuccess) === 'function') {
+          gatewaySettings.onThreeDSecureSuccess(threeDSecureData);
         }
-      )
-      gatewaySettings.onTokenize(
-        token,
-        'is stored at PCI storage',
-        card ? card.cardholder_name : window.decodeURI(event.data.cardHolderName),
-        {
-          last_4: card ? card.card_number : event.data.cardNumber,
-          card_type: card ? card.card_type : event.data.cardType,
-          expiration_month: card ? card.expiration_month : event.data.expiration.slice(0,2),
-          expiration_year: card ? card.expiration_year : event.data.expiration.slice(2,6)
-        }
-      );
-      hideForm();
-    }
-
-    if (status !== true) {
-      if (gatewaySettings.onError && typeof(gatewaySettings.onError) === 'function') {
-        gatewaySettings.onError(message);
       } else {
-        alert(message);
+        if (gatewaySettings.onThreeDSecureFail && typeof(gatewaySettings.onThreeDSecureFail) === 'function') {
+          gatewaySettings.onThreeDSecureFail(event.data);
+        }
+      }
+
+    } else {
+      // handle channex event
+      var card = event.data.card;
+      var token = card ? card.card_token : event.data.token;
+  
+      if (gatewaySettings.onTokenize && typeof(gatewaySettings.onTokenize) === 'function' && status === true) {
+        console.log(
+          token,
+          'is stored at PCI storage',
+          window.decodeURI(event.data.cardHolderName),
+          {
+            last_4: card ? card.card_number : event.data.cardNumber,
+            card_type: card ? card.card_type : event.data.cardType,
+            expiration_month: card ? card.expiration_month : event.data.expiration.slice(0,2),
+            expiration_year: card ? card.expiration_year : event.data.expiration.slice(2,6)
+          }
+        )
+        gatewaySettings.onTokenize(
+          token,
+          'is stored at PCI storage',
+          card ? card.cardholder_name : window.decodeURI(event.data.cardHolderName),
+          {
+            last_4: card ? card.card_number : event.data.cardNumber,
+            card_type: card ? card.card_type : event.data.cardType,
+            expiration_month: card ? card.expiration_month : event.data.expiration.slice(0,2),
+            expiration_year: card ? card.expiration_year : event.data.expiration.slice(2,6)
+          }
+        );
+        hideForm();
+      }
+  
+      if (status !== true) {
+        if (gatewaySettings.onError && typeof(gatewaySettings.onError) === 'function' && message) {
+          gatewaySettings.onError(message);
+        }
+        if (message) {
+          alert(message);
+        }  
       }
     }
   }
@@ -97,7 +122,7 @@ function showForm () {
       border="0"
       id="pcibooking_frame"
       src="${DOMAIN}/api/public/v1/credit_card_form"></iframe>
-    ${submit_button}`;
+    ${submit_button}`;  
 
   modal.style.display = 'block';
   if (showSubmitButton) {
@@ -118,6 +143,20 @@ function hideForm () {
   }
 }
 
+function showThreeDForm (token, id, state_token) {
+  const formHolder = document.getElementById('3dsForm');
+  formHolder.style.height = '600px';
+  formHolder.style.paddingBottom = '10px';
+  formHolder.innerHTML = `
+  <iframe width="100%"
+    height="100%"
+    frameborder="0"
+    border="0"
+    id="three_d_secure_form"
+    src="${DOMAIN}/api/public/v1/three_d_secure_form?token=${token}&hotel_id=${id}&state_token=${state_token}">
+    </iframe>`;
+}     
+
 export default class {
   constructor(settings) {
     gatewaySettings = {
@@ -132,4 +171,5 @@ export default class {
   showForm = showForm
   hideForm = hideForm
   tokenize = tokenize
+  showThreeDForm = showThreeDForm
 }
