@@ -198,7 +198,10 @@ function onSubmit(event) {
                 result.paymentMethod.card.last4,
                 cardholderName,
                 {
-                  clientSecret: response.payload.client_secret
+                  clientSecret: response.payload.client_secret,
+                  paymentMethodId: response.payload.payment_method_id,
+                  paymentIntentId: response.payload.payment_intent_id,
+                  requiresAction: response.payload.requires_action,
                 }
               );
             }
