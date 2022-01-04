@@ -1,7 +1,7 @@
 export default {
   handleOnlinePayment: ({ settings, payment, onlyTokenizeCard}) => {
     const token = settings.token;
-    const { clientSecret, paymentIntentId, paymentMethodId, requiresAction} = payment;
+    const { clientSecret } = payment;
     const stripe = window.Stripe(token);
     let paymentPromise = Promise.resolve();
 
@@ -25,34 +25,24 @@ export default {
         };
       });
     } else {
-      if(requiresAction)  {
-        paymentPromise = stripe.handleCardAction(clientSecret).then((result) => {
-          if (result.error) {
-            return Promise.reject({
-              error: result.error,
-              message: result.error.message,
-            });
-          }
-  
-          return ({
-            payment_intent_id: result.paymentIntent.id,
-            payment_method_id: result.paymentIntent.payment_method
-          })
-        }).catch(error => {
-          return {
-            error,
-            message: error.message,
-          };
-        });
-      } else {
-        paymentPromise = paymentPromise.then(() => {
-          return {
-            client_secret: clientSecret,
-            payment_intent_id: paymentIntentId,
-            payment_method_id: paymentMethodId,
-          }
-        });
-      }
+      paymentPromise = stripe.handleCardPayment(clientSecret).then((result) => {
+        if (result.error) {
+          return Promise.reject({
+            error: result.error,
+            message: result.error.message,
+          });
+        }
+
+        return ({
+          payment_intent_id: result.paymentIntent.id,
+          payment_method_id: result.paymentIntent.payment_method
+        })
+      }).catch(error => {
+        return {
+          error,
+          message: error.message,
+        };
+      });
     }
 
     return paymentPromise;
