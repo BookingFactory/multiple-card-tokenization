@@ -15,7 +15,7 @@ module.exports = {
     ]
   },
   output: {
-    filename: 'dist/multipleCardTokenization.min.js',
+    filename: 'production/multipleCardTokenization.min.js',
     libraryTarget: 'umd',
     library: 'multipleCardTokenization'
   },
