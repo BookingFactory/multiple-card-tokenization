@@ -1,3 +1,5 @@
+import * as Sentry from "@sentry/browser";
+
 export default {
   handleOnlinePayment: ({ settings, payment, onlyTokenizeCard}) => {
     const token = settings.token;
@@ -25,7 +27,8 @@ export default {
         };
       });
     } else {
-      paymentPromise = stripe.handleCardPayment(clientSecret).then((result) => {
+      paymentPromise = stripe.confirmCardPayment(clientSecret).then((result) => {
+        Sentry.captureMessage('Result of confirmCardPayment', {extra: result});
         if (result.error) {
           return Promise.reject({
             error: result.error,
@@ -44,7 +47,6 @@ export default {
         };
       });
     }
-
     return paymentPromise;
   }
 }
