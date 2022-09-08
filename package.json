@@ -4,7 +4,7 @@
   "main": "lib/index.js",
   "author": "Andrew Yudin",
   "scripts": {
-    "dev": "webpack-dev-server --host 0.0.0.0 --port 3008",
+    "dev": "webpack serve --host 0.0.0.0 --port 3008",
     "test": "mocha --compilers js:babel-register --recursive",
     "test:watch": "npm run test -- --watch",
     "prebuild": "rimraf dist lib",
@@ -28,7 +28,12 @@
     "rimraf": "^2.4.2",
     "typescript": "^1.8.10",
     "typescript-definition-tester": "0.0.4",
-    "webpack": "^3.10.0",
-    "webpack-dev-server": "^2.11.5"
+    "webpack": "^4.46.0",
+    "webpack-cli": "^4.10.0",
+    "webpack-dev-server": "^3.11.0"
+  },
+  "dependencies": {
+    "@sentry/browser": "^7.12.1",
+    "@sentry/tracing": "^7.12.1"
   }
 }
