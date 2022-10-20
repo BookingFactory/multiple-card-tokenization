@@ -36,10 +36,11 @@ const ONLINE_GATEWAYS = {
 export function init(service, settings) {
   Sentry.init({
     dsn: "https://db118ba1d28a4ab08c1e2b9ab1332892@o100049.ingest.sentry.io/6725921",
-    release: "multiple-card-tokenization",
+    release: '0.1.1',
     integrations: [new BrowserTracing()],
     tracesSampleRate: 1.0,
   });
+  console.log('TBF:MultipleCardTokenization v 0.1.1 runned');
   
   try {
     return new SERVICES[`${service}_service`](settings);
