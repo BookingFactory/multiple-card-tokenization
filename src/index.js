@@ -52,12 +52,12 @@ export function init(service, settings) {
   }
 }
 
-export function handleOnlinePayment(gateway, initial_amount, payload) {
+export function initStripeScaGateway(gateway, settings) {
   const paymentGateway = ONLINE_GATEWAYS[gateway];
 
   if (!paymentGateway) {
     return Promise.reject(new Error("Unsupported payment gateway"));
   }
 
-  return paymentGateway.handleOnlinePayment(initial_amount, payload);
+  return new paymentGateway(settings);
 }
