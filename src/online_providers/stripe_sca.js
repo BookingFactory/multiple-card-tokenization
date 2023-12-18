@@ -2,29 +2,14 @@ import * as Sentry from "@sentry/browser";
 let gatewaySettings = {};
 
 // for local testing 
-// const DOMAIN = "http://localhost:3000";
-const DOMAIN = process.env.ENV_DOMAIN ? process.env.ENV_DOMAIN : "https://app.thebookingfactory.com";
+const DOMAIN = "http://localhost:3000";
+// const DOMAIN = process.env.ENV_DOMAIN ? process.env.ENV_DOMAIN : "https://app.thebookingfactory.com";
 // export default {
 //   handleOnlinePayment: ({ settings, payment, onlyTokenizeCard, apiKey, hotel_id, state_token}) => {
 //     const token = settings.token;
 //     const { clientSecret, paymentIntentId, paymentMethodId } = payment;
 //     const stripe = window.Stripe(token);
 //     let paymentPromise = Promise.resolve();
-
-//     function showThreeDForm (id, state_token, payment_method_id, payment_intent_id) {
-//       const formHolder = document.getElementById('3dsForm');
-//       formHolder.style.height = '600px';
-//       formHolder.style.paddingBottom = '10px';
-//       formHolder.innerHTML = `
-//       <iframe width="100%"
-//         height="100%"
-//         frameborder="0"
-//         border="0"
-//         id="three_d_secure_form"
-//         src="${DOMAIN}/api/public/v1/stripe_three_d_secure_form?&hotel_id=${id}&state_token=${state_token}&only_tokenize_card=${onlyTokenizeCard}">
-//         </iframe>`;
-//     } ;
-
 //     if (onlyTokenizeCard) {
 //       paymentPromise = stripe.handleCardSetup(clientSecret).then((result) => {
 //         if (result.error) {
@@ -114,8 +99,6 @@ const DOMAIN = process.env.ENV_DOMAIN ? process.env.ENV_DOMAIN : "https://app.th
 //     }
 //     return paymentPromise;
 //   }
-
-
 // }
 
 function _initializeScripts() {
@@ -144,12 +127,12 @@ function windowEventHandler(event) {
         }
       } else {
         console.log("IT DOESN'T WORK");
-        // if (gatewaySettings.onThreeDSecureFail && typeof(gatewaySettings.onThreeDSecureFail) === 'function') {
-        //   gatewaySettings.onStripeThreeDSecureFail(event.data);
-        // }
+        if (gatewaySettings.onThreeDSecureFail && typeof(gatewaySettings.onThreeDSecureFail) === 'function') {
+          gatewaySettings.onThreeDSecureFail(threeDSecureData);
+        }
       }
     } else {
-      if (status !== true) {
+      if (status !== undefined && status !== true) {
         console.log("SOMETHING REALY BAD");
         // if (gatewaySettings.onError && typeof(gatewaySettings.onError) === 'function' && message) {
         //   gatewaySettings.onError(message);
@@ -164,6 +147,7 @@ function windowEventHandler(event) {
 
 function showThreeDForm (id, state_token) {
   const formHolder = document.getElementById('3dsForm');
+  var hide_or_show = (gatewaySettings.onlyTokenizeCard) ? "100%" : "0%"
   formHolder.style.height = '600px';
   formHolder.style.paddingBottom = '10px';
   formHolder.innerHTML = `
@@ -172,7 +156,7 @@ function showThreeDForm (id, state_token) {
     frameborder="0"
     border="0"
     id="three_d_secure_form"
-    src="${DOMAIN}/api/public/v1/stripe_three_d_secure_form?&hotel_id=${id}&state_token=${state_token}">
+    src="${DOMAIN}/api/public/v1/stripe_three_d_secure_form?&hotel_id=${id}&state_token=${state_token}&only_tokenize_card=${gatewaySettings.onlyTokenizeCard}">
     </iframe>`;
 } ;
 
