@@ -2,104 +2,8 @@ import * as Sentry from "@sentry/browser";
 let gatewaySettings = {};
 
 // for local testing 
-const DOMAIN = "http://localhost:3000";
-// const DOMAIN = process.env.ENV_DOMAIN ? process.env.ENV_DOMAIN : "https://app.thebookingfactory.com";
-// export default {
-//   handleOnlinePayment: ({ settings, payment, onlyTokenizeCard, apiKey, hotel_id, state_token}) => {
-//     const token = settings.token;
-//     const { clientSecret, paymentIntentId, paymentMethodId } = payment;
-//     const stripe = window.Stripe(token);
-//     let paymentPromise = Promise.resolve();
-//     if (onlyTokenizeCard) {
-//       paymentPromise = stripe.handleCardSetup(clientSecret).then((result) => {
-//         if (result.error) {
-//           return Promise.reject({
-//             error: result.error,
-//             message: result.error.message,
-//           });
-//         }
-
-//         return ({
-//           setup_intent_id: result.setupIntent.id,
-//           payment_method_id: result.setupIntent.payment_method
-//         })
-//       }).catch(error => {
-//         return {
-//           error,
-//           message: error.message,
-//         };
-//       });
-//     } else {
-//       // let timeout;
-
-//       // function ensureStripeHookFetched() {
-//       //   return new Promise(function (resolve, reject) {
-//       //       (function waitForHookResponse(){
-//       //         return fetch(`${DOMAIN}/api/public/v1/validate_payment_intent?payment_intent_id=${paymentIntentId}`, {
-//       //           method:  'GET',
-//       //           headers: {
-//       //             'Token': apiKey,
-//       //             'Content-Type': 'application/json'
-//       //           },
-//       //         })
-//       //           .then(response => {
-//       //             return response.json().then(data => ({
-//       //               status: response.status,
-//       //               data
-//       //             }));
-//       //           })
-//       //           .then(response => {
-//       //             const { data, status } = response;
-//       //             if (timeout) {
-//       //               clearTimeout(timeout);
-//       //             }
-//       //             if (status == 400 && data.error) {
-//       //               return reject({
-//       //                 error: data.error,
-//       //                 message: data.error.message,
-//       //               });
-//       //             }
-//       //             if (status == 404 && data.error) {
-//       //               timeout = setTimeout(waitForHookResponse, 10000);
-//       //             }
-//       //             if (status == 200 && data.data) {
-//       //               Sentry.captureMessage('Result of validatePaymentIntent', {extra: data});
-//       //               return resolve({
-//       //                 payment_intent_id: data.data.id,
-//       //                 payment_method_id: data.data.payment_method
-//       //               });
-//       //             }
-//       //           });
-//       //       })();
-//       //   });
-//       // }
-
-//       // const confirmCardPayment = stripe.confirmCardPayment(clientSecret).then((result) => {
-//       //   Sentry.captureMessage('Result of confirmCardPayment', {extra: result});
-//       //   if (result.error) {
-//       //     return Promise.reject({
-//       //       error: result.error,
-//       //       message: result.error.message,
-//       //     });
-//       //   }
-
-//       //   return ({
-//       //     payment_intent_id: result.paymentIntent.id,
-//       //     payment_method_id: result.paymentIntent.payment_method
-//       //   });
-//       // }).catch(error => {
-//       //   return {
-//       //     error,
-//       //     message: error.message,
-//       //   };
-//       // });
-//       // const validatePaymentIntent = ensureStripeHookFetched();
-//       // paymentPromise = Promise.race([confirmCardPayment, validatePaymentIntent]);
-//       showThreeDForm(hotel_id, state_token);
-//     }
-//     return paymentPromise;
-//   }
-// }
+// const DOMAIN = "http://localhost:3000";
+const DOMAIN = process.env.ENV_DOMAIN ? process.env.ENV_DOMAIN : "https://app.thebookingfactory.com";
 
 function _initializeScripts() {
   if (window.addEventListener) {
@@ -145,9 +49,8 @@ function windowEventHandler(event) {
   }
 }
 
-function showThreeDForm (id, state_token) {
+function showThreeDForm (url) {
   const formHolder = document.getElementById('3dsForm');
-  var hide_or_show = (gatewaySettings.onlyTokenizeCard) ? "100%" : "0%"
   formHolder.style.height = '600px';
   formHolder.style.paddingBottom = '10px';
   formHolder.innerHTML = `
@@ -156,10 +59,37 @@ function showThreeDForm (id, state_token) {
     frameborder="0"
     border="0"
     id="three_d_secure_form"
-    src="${DOMAIN}/api/public/v1/stripe_three_d_secure_form?&hotel_id=${id}&state_token=${state_token}&only_tokenize_card=${gatewaySettings.onlyTokenizeCard}">
+    src="${url}">
     </iframe>`;
-} ;
+};
 
+function fetchStripeData() {
+    fetch(`${DOMAIN}/api/public/v1/stripe_three_d_secure_form?hotel_id=${gatewaySettings.hotel_id}&state_token=${gatewaySettings.state_token}&only_tokenize_card=${gatewaySettings.onlyTokenizeCard}`, {
+      method:  'GET',
+      headers: {
+        'Token': gatewaySettings.apiKey,
+        'Content-Type': 'application/json'
+      },
+    }).then(response => {
+      return response.json().then(data => ({
+        status: response.status,
+        data
+      }));
+    }).then(response => {
+      const { data, status } = response;
+      if (status == 400 && data.error) {
+        return gatewaySettings.onThreeDSecureFail(data);
+      }
+
+      if (status == 200 && data.success == true && data.redirect_url.length > 0) {
+        return showThreeDForm(data.redirect_url)
+      }
+
+      if (status == 200 && data.success == false) {
+        return gatewaySettings.onThreeDSecureFail(data);
+      }
+    });
+};
 
 export default class {
   constructor(settings) {
@@ -172,4 +102,5 @@ export default class {
   }
 
   showThreeDForm = showThreeDForm
+  fetchStripeData = fetchStripeData
 }
