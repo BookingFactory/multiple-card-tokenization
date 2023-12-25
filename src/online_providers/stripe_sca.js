@@ -64,7 +64,7 @@ function showThreeDForm (url) {
 };
 
 function fetchStripeData() {
-    fetch(`${DOMAIN}/api/public/v1/stripe_three_d_secure_form?hotel_id=${gatewaySettings.hotel_id}&state_token=${gatewaySettings.state_token}&only_tokenize_card=${gatewaySettings.onlyTokenizeCard}`, {
+    fetch(`${DOMAIN}/api/public/v1/stripe_three_d_secure_form?hotel_id=${gatewaySettings.hotel_id}&state_token=${gatewaySettings.state_token}&only_tokenize_card=${gatewaySettings.onlyTokenizeCard}&request_form=${gatewaySettings.requestForm}&token=${gatewaySettings.booking_token}`, {
       method:  'GET',
       headers: {
         'Token': gatewaySettings.apiKey,
