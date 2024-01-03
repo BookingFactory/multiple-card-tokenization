@@ -2,8 +2,8 @@ import * as Sentry from "@sentry/browser";
 let gatewaySettings = {};
 
 // for local testing 
-// const DOMAIN = "http://localhost:3000";
-const DOMAIN = process.env.ENV_DOMAIN ? process.env.ENV_DOMAIN : "https://app.thebookingfactory.com";
+const DOMAIN = "http://localhost:3000";
+// const DOMAIN = process.env.ENV_DOMAIN ? process.env.ENV_DOMAIN : "https://app.thebookingfactory.com";
 
 function _initializeScripts() {
   if (window.addEventListener) {
@@ -49,10 +49,19 @@ function windowEventHandler(event) {
   }
 }
 
-function showThreeDForm (url) {
+function showThreeDForm (data) {
+  const url = data.redirect_url
+  const iframe = data.iframe
   const formHolder = document.getElementById('3dsForm');
+  const threeDSModal = document.getElementsByClassName('ThreeDSModal');
   formHolder.style.height = '600px';
   formHolder.style.paddingBottom = '10px';
+
+  if  (iframe != undefined && iframe === false) {
+    formHolder.style.display = "none";
+    threeDSModal[0].style.display = "none";
+  }
+
   formHolder.innerHTML = `
   <iframe width="100%"
     height="100%"
@@ -81,10 +90,15 @@ function fetchStripeData() {
         return gatewaySettings.onThreeDSecureFail(data);
       }
 
-      if (status == 200 && data.success == true && data.redirect_url.length > 0) {
-        return showThreeDForm(data.redirect_url)
+      if (status == 200 && data.success == true && data.hasOwnProperty('redirect_url') && data.redirect_url.length > 0) {
+        return showThreeDForm(data)
       }
 
+      if (status == 200 && data.success === true && data.hasOwnProperty('three_d_secure_data') && data.three_d_secure_data === true) {
+        return gatewaySettings.onThreeDSecureSuccess(data);
+      }
+
+      // TODO: Maybe another handler if noone above matches? Safe fail?
       if (status == 200 && data.success == false) {
         return gatewaySettings.onThreeDSecureFail(data);
       }
