@@ -2,8 +2,8 @@ import * as Sentry from "@sentry/browser";
 let gatewaySettings = {};
 
 // for local testing 
-const DOMAIN = "http://localhost:3000";
-// const DOMAIN = process.env.ENV_DOMAIN ? process.env.ENV_DOMAIN : "https://app.thebookingfactory.com";
+// const DOMAIN = "http://localhost:3000";
+const DOMAIN = process.env.ENV_DOMAIN ? process.env.ENV_DOMAIN : "https://app.thebookingfactory.com";
 
 function _initializeScripts() {
   if (window.addEventListener) {
