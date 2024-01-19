@@ -25,22 +25,16 @@ function windowEventHandler(event) {
       const threeDSecureData = event.data;
 
       if (status === true) {
-        console.log("IT WORKS!");
         if (gatewaySettings.onThreeDSecureSuccess && typeof(gatewaySettings.onThreeDSecureSuccess) === 'function') {
           gatewaySettings.onThreeDSecureSuccess(threeDSecureData);
         }
       } else {
-        console.log("IT DOESN'T WORK");
         if (gatewaySettings.onThreeDSecureFail && typeof(gatewaySettings.onThreeDSecureFail) === 'function') {
           gatewaySettings.onThreeDSecureFail(threeDSecureData);
         }
       }
     } else {
       if (status !== undefined && status !== true) {
-        console.log("SOMETHING REALY BAD");
-        // if (gatewaySettings.onError && typeof(gatewaySettings.onError) === 'function' && message) {
-        //   gatewaySettings.onError(message);
-        // }
         if (message) {
           alert(message);
         }
@@ -73,37 +67,40 @@ function showThreeDForm (data) {
 };
 
 function fetchStripeData() {
-    fetch(`${DOMAIN}/api/public/v1/stripe_three_d_secure_form?hotel_id=${gatewaySettings.hotel_id}&state_token=${gatewaySettings.state_token}&only_tokenize_card=${gatewaySettings.onlyTokenizeCard}&request_form=${gatewaySettings.requestForm}&token=${gatewaySettings.booking_token}`, {
-      method:  'GET',
-      headers: {
-        'Token': gatewaySettings.apiKey,
-        'Content-Type': 'application/json'
-      },
-    }).then(response => {
-      return response.json().then(data => ({
-        status: response.status,
-        data
-      }));
-    }).then(response => {
-      const { data, status } = response;
-      if (status == 400 && data.error) {
+  return fetch(`${DOMAIN}/api/public/v1/stripe_three_d_secure_form?hotel_id=${gatewaySettings.hotel_id}&state_token=${gatewaySettings.state_token}&only_tokenize_card=${gatewaySettings.onlyTokenizeCard}&request_form=${gatewaySettings.requestForm}&token=${gatewaySettings.booking_token}`, {
+    method:  'GET',
+    headers: {
+      'Token': gatewaySettings.apiKey,
+      'Content-Type': 'application/json'
+    },
+  })
+  .then(response => {
+    const { status } = response;
+    return response.json().then(data => {
+      if (status === 400 && data.error) {
+        return gatewaySettings.onThreeDSecureFail(data);
+      }
+      if (status === 200 && data.success === true) {
+        if (data.hasOwnProperty('redirect_url') && data.redirect_url.length > 0) {
+          return showThreeDForm(data);
+        }
+
+        if (data.hasOwnProperty('three_d_secure_data') && data.three_d_secure_data === true) {
+          return gatewaySettings.onThreeDSecureSuccess(data);
+        }
+
         return gatewaySettings.onThreeDSecureFail(data);
       }
 
-      if (status == 200 && data.success == true && data.hasOwnProperty('redirect_url') && data.redirect_url.length > 0) {
-        return showThreeDForm(data)
-      }
-
-      if (status == 200 && data.success === true && data.hasOwnProperty('three_d_secure_data') && data.three_d_secure_data === true) {
-        return gatewaySettings.onThreeDSecureSuccess(data);
-      }
-
-      // TODO: Maybe another handler if noone above matches? Safe fail?
-      if (status == 200 && data.success == false) {
+      if (status === 200 && data.success === false) {
         return gatewaySettings.onThreeDSecureFail(data);
       }
     });
-};
+  }).catch(error => {
+    console.error('Error fetching Stripe data:', error);
+    throw error; // propagate the error
+  });
+}
 
 export default class {
   constructor(settings) {
