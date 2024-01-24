@@ -74,11 +74,37 @@ function _checkLoading() {
   }
 }
 
+function displayErrorMessage(inputElement) {
+  const existingErrorMessage = document.querySelector('.error-message');
+  if (existingErrorMessage) existingErrorMessage.remove();
+
+  const errorMessage = document.createElement('div');
+  errorMessage.textContent = 'Cardholder name is required';
+  errorMessage.style.color = '#FF0000';
+  errorMessage.style.fontSize = '12px';
+  errorMessage.classList.add('error-message');
+  inputElement.parentNode.appendChild(errorMessage);
+
+  inputElement.style.borderColor = '#FFC0CB';
+}
+
 function _initializeScripts() {
   const { postfix, connection, showSubmitButton } = gatewaySettings;
   const { token } = connection;
 
   form = document.querySelector(`#stripe_card_form_${postfix}`);
+  const cardholderNameInput = document.querySelector(`#cardholder-name_${postfix}`);
+
+  cardholderNameInput.addEventListener('input', function() {
+    const existingErrorMessage = document.querySelector('.error-message');
+    if (existingErrorMessage) {
+      existingErrorMessage.remove();
+      cardholderNameInput.style.borderColor = '';
+    }
+    if (!cardholderNameInput.value) {
+      displayErrorMessage(cardholderNameInput);
+    }
+  });
 
   if (showSubmitButton === undefined || !showSubmitButton === false) {
     submit = document.querySelector(`#submit_${postfix}`);
@@ -146,9 +172,15 @@ function prepareIntent(amount, apiKey, paymentMethodId) {
 
 function onSubmit(event) {
   const { postfix } = gatewaySettings;
-  const cardholderName = document.querySelector(`#cardholder-name_${postfix}`).value;
+  const cardholderNameInput = document.querySelector(`#cardholder-name_${postfix}`);
+  const cardholderName = cardholderNameInput.value;
 
   event.preventDefault();
+
+  if (!cardholderName) {
+    displayErrorMessage(cardholderNameInput);
+    return;
+  }
 
   const billingDetails = {
     "billing_details": {

@@ -36,11 +36,11 @@ const ONLINE_GATEWAYS = {
 export function init(service, settings) {
   Sentry.init({
     dsn: "https://db118ba1d28a4ab08c1e2b9ab1332892@o100049.ingest.sentry.io/6725921",
-    release: '0.1.1',
+    release: '0.2.0',
     integrations: [new BrowserTracing()],
     tracesSampleRate: 1.0,
   });
-  console.log('TBF:MultipleCardTokenization v 0.1.1 runned');
+  console.log('TBF:MultipleCardTokenization v 0.2.0 runned');
   
   try {
     return new SERVICES[`${service}_service`](settings);
@@ -52,12 +52,14 @@ export function init(service, settings) {
   }
 }
 
-export function handleOnlinePayment(gateway, initial_amount, payload) {
-  const paymentGateway = ONLINE_GATEWAYS[gateway];
+export function initStripeScaGateway(gateway, settings) {
+  return new Promise((resolve, reject) => {
+    const paymentGateway = ONLINE_GATEWAYS[gateway];
 
-  if (!paymentGateway) {
-    return Promise.reject(new Error("Unsupported payment gateway"));
-  }
+    if (!paymentGateway) {
+      reject(new Error("Unsupported payment gateway"));
+    }
 
-  return paymentGateway.handleOnlinePayment(initial_amount, payload);
+    resolve(new paymentGateway(settings));
+  });
 }
