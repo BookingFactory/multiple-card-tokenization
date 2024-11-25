@@ -87,7 +87,7 @@ function fetchStripeData() {
   .then(response => {
     const { status } = response;
     return response.json().then(data => {
-      if (status === 400 && data.error) {
+      if (status === 400 && data.error || status !== 200 && data.success === false) {
         return gatewaySettings.onThreeDSecureFail(data);
       }
       if (status === 200 && data.success === true) {
