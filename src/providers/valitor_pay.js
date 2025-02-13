@@ -2,7 +2,7 @@ let gatewaySettings = {};
 let modal;
 
 // for local testing DOMAIN = "http://localhost:3000";
-const DOMAIN = process.env.ENV_DOMAIN ? process.env.ENV_DOMAIN : "https://app.thebookingfactory.com";
+const DOMAIN = "http://localhost:3000";
 
 function _drawForm() {
   const { postfix, target } = gatewaySettings;
